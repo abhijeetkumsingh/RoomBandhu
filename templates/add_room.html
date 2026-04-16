@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Add Room — Room Bandhu{% endblock %}
+
+{% block content %}
+<div class="add-room-page">
+  <div class="page-header">
+    <h1>List Your Room 🏠</h1>
+    <p>Fill in the details below. Minimum 4 photos required to attract more students.</p>
+  </div>
+
+  <form method="POST" action="/add_room" enctype="multipart/form-data" id="add-room-form">
+
+    <!-- ── Basic Info ── -->
+    <div class="card">
+      <div class="card-title-sm">📝 Basic Information</div>
+
+      <div class="form-group">
+        <label>Room Title *</label>
+        <input type="text" name="title" class="form-control"
+               placeholder="e.g. Cozy Single Room Near NIT Patna" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Monthly Rent (₹) *</label>
+          <input type="number" name="rent" class="form-control"
+                 placeholder="3500" min="500" required>
+        </div>
+        <div class="form-group">
+          <label>Room Type *</label>
+          <select name="room_type" class="form-control" required>
+            <option value="Single">Single Room</option>
+            <option value="Shared">Shared Room</option>
+            <option value="PG">PG (Paying Guest)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Owner/Contact Phone *</label>
+        <input type="tel" name="phone" class="form-control"
+               placeholder="9876543210" required maxlength="10">
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" class="form-control"
+          placeholder="Describe the room — nearby landmarks, rules, what's included, floor, neighbors..."></textarea>
+      </div>
+    </div>
+
+    <!-- ── Location ── -->
+    <div class="card">
+      <div class="card-title-sm">📍 Location</div>
+
+      <div class="form-group">
+        <label>Full Address / Area *</label>
+        <input type="text" name="location" id="location-input" class="form-control"
+               placeholder="e.g. Near NIT Patna, Ashok Rajpath, Patna" required>
+      </div>
+
+      <div class="form-group">
+        <label>Nearby Area / Landmark</label>
+        <input type="text" name="area" class="form-control"
+               placeholder="e.g. 5 min walk from NIT Main Gate">
+      </div>
+
+      <div class="form-group">
+        <label>GPS Location <span style="color:var(--muted);font-weight:400">(optional but helps students find you)</span></label>
+        <button type="button" class="get-location-btn" id="get-loc-btn" onclick="getFormLocation()">
+          📍 Use My Current Location
+        </button>
+        <input type="hidden" name="latitude"  id="lat-input">
+        <input type="hidden" name="longitude" id="lng-input">
+        <p class="field-note">This allows students to find rooms near them. Your exact address stays private.</p>
+      </div>
+    </div>
+
+    <!-- ── Facilities ── -->
+    <div class="card">
+      <div class="card-title-sm">✨ Facilities Included</div>
+      <div class="checkbox-grid">
+        {% for fac in ['WiFi', 'AC', 'Food / Meals', 'Laundry', 'Parking', 'Geyser', 'Study Table', 'Almirah / Wardrobe', 'Attach Bathroom', 'RO Water', '24hr Electricity', 'Security Guard', 'CCTV', 'Cooking Allowed'] %}
+          <label class="cb-item">
+            <input type="checkbox" name="facilities" value="{{ fac }}">
+            {{ fac }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── Photos ── -->
+    <div class="card">
+      <div class="card-title-sm">📸 Room Photos <span style="color:var(--accent);font-size:13px">(Minimum 4 required)</span></div>
+
+      <div class="upload-zone" id="img-dropzone">
+        <div class="upload-icon">📷</div>
+        <h4>Click or drag photos here</h4>
+        <p>JPG, PNG, WebP • Max 10 images • 16MB total</p>
+        <input type="file" id="room-images" name="images"
+               multiple accept="image/jpeg,image/png,image/webp">
+      </div>
+
+      <div class="preview-grid" id="img-preview"></div>
+      <span class="img-counter warn" id="img-counter">0/4 images (need 4 more)</span>
+
+      <p class="field-note" style="margin-top:8px">
+        💡 First photo will be the cover image. Drag to reorder after selecting.
+      </p>
+    </div>
+
+    <button type="submit" class="btn btn-accent btn-lg btn-full submit-btn">
+      🚀 Submit Room Listing
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initImageUpload('img-dropzone', 'room-images', 'img-preview', 'img-counter', 4);
+  });
+</script>
+{% endblock %}

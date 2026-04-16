@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Room Bandhu — Find Student Rooms{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ══════════════════════════════ -->
+<div class="hero">
+  <h1>Find Your Perfect<br><span>Student Room</span></h1>
+  <p>Affordable rooms, PGs &amp; shared accommodations near your college</p>
+
+  <form class="search-wrap" method="GET" action="/">
+    <div class="search-box">
+      <span style="font-size:20px;padding:0 2px 0 4px">🔍</span>
+      <input type="text" name="q" value="{{ query }}"
+             placeholder="Search by location, college, area...">
+      <button type="submit" class="search-btn">Search</button>
+    </div>
+  </form>
+
+  <button class="nearby-btn" id="nearby-btn" onclick="getNearbyRooms()">
+    📍 Rooms Near Me
+  </button>
+
+  <svg class="hero-wave" viewBox="0 0 900 36" preserveAspectRatio="none"
+       xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,18 C150,36 300,0 450,18 C600,36 750,0 900,18 L900,36 L0,36 Z"
+          fill="#F5F2EE"/>
+  </svg>
+</div>
+
+<!-- ══ FILTERS ════════════════════════════ -->
+<div class="filters-bar">
+  <span class="filter-label">Filter:</span>
+  {% for t in ['All','Single','Shared','PG'] %}
+    <a href="/?type={{ t }}{% if query %}&q={{ query }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if sort != 'default' %}&sort={{ sort }}{% endif %}"
+       class="chip {% if active_type == t %}active{% endif %}">{{ t }}</a>
+  {% endfor %}
+
+  <form method="GET" action="/" id="filter-form" style="display:contents">
+    <input type="hidden" name="type" value="{{ active_type }}">
+    <input type="hidden" name="q" value="{{ query }}">
+
+    <select name="max_price" class="chip" onchange="document.getElementById('filter-form').submit()">
+      <option value="0" {% if not max_price %}selected{% endif %}>Any Price</option>
+      <option value="2000" {% if max_price==2000 %}selected{% endif %}>Under ₹2,000</option>
+      <option value="3500" {% if max_price==3500 %}selected{% endif %}>Under ₹3,500</option>
+      <option value="5000" {% if max_price==5000 %}selected{% endif %}>Under ₹5,000</option>
+    </select>
+
+    <select name="sort" class="chip" onchange="document.getElementById('filter-form').submit()">
+      <option value="default" {% if sort=='default' %}selected{% endif %}>Sort: Default</option>
+      <option value="price-asc" {% if sort=='price-asc' %}selected{% endif %}>Price: Low → High</option>
+      <option value="price-desc" {% if sort=='price-desc' %}selected{% endif %}>Price: High → Low</option>
+      <option value="rating" {% if sort=='rating' %}selected{% endif %}>Top Rated</option>
+    </select>
+  </form>
+</div>
+
+<!-- ══ MAIN CONTENT ═══════════════════════ -->
+<div class="main">
+
+  <!-- Nearby rooms panel (populated via JS) -->
+  <div class="nearby-panel" id="nearby-panel"></div>
+
+  <div class="section-head">
+    <div class="section-title">
+      Available Rooms
+      <span class="count-pill">{{ rooms|length }} room{{ 's' if rooms|length != 1 else '' }}</span>
+    </div>
+    {% if session.user_id %}
+      <a href="{{ url_for('add_room') }}" class="btn btn-accent btn-outline">+ List Your Room</a>
+    {% endif %}
+  </div>
+
+  <div class="rooms-grid">
+    {% if not rooms %}
+      <div class="empty-state">
+        <div class="big-icon">🏘️</div>
+        <h3>No rooms found</h3>
+        <p>Try changing your search or filters</p>
+      </div>
+    {% endif %}
+
+    {% for r in rooms %}
+      {% set img = r.images[0] if r.images else None %}
+      <div class="room-card">
+        <div class="card-img">
+          {% if img %}
+            <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+                 alt="{{ r.title }}" loading="lazy">
+          {% else %}
+            <div class="img-placeholder">🏠</div>
+          {% endif %}
+
+          <div class="card-badges">
+            <span class="badge badge-type">{{ r.room_type }}</span>
+            {% if r.is_available %}
+              <span class="badge badge-avail">Available</span>
+            {% else %}
+              <span class="badge badge-unavail">Booked</span>
+            {% endif %}
+          </div>
+
+          {% if r.images|length > 1 %}
+            <span class="img-count">📷 {{ r.images|length }}</span>
+          {% endif %}
+
+          {% if session.user_id %}
+            <button class="wish-btn {% if r.id in wish_ids %}active{% endif %}"
+                    onclick="toggleWish(this, {{ r.id }})">
+              {{ '❤️' if r.id in wish_ids else '🤍' }}
+            </button>
+          {% endif %}
+        </div>
+
+        <div class="card-body">
+          <div class="card-title">{{ r.title }}</div>
+          <div class="card-loc">📍 {{ r.location }}</div>
+          <div class="card-price">
+            ₹{{ '{:,}'.format(r.rent) }}<small>/month</small>
+          </div>
+          <div class="tags">
+            {% for f in r.facilities_list()[:4] %}
+              <span class="tag">{{ f }}</span>
+            {% endfor %}
+          </div>
+          <div class="card-footer">
+            <div class="stars-row">
+              {% set rating = r.avg_rating() %}
+              {% for i in range(1,6) %}
+                <span style="color:{{ '#F5A623' if i <= rating|round else '#ddd' }};font-size:13px">★</span>
+              {% endfor %}
+              <span class="rating-num">{{ rating }} ({{ r.reviews|length }})</span>
+            </div>
+            <div class="card-actions">
+              <a href="{{ url_for('room_detail', room_id=r.id) }}" class="btn btn-outline">Details</a>
+              <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room listing "' + r.title + '" on Room Bandhu. Is it still available?')|urlencode }}"
+                 target="_blank" class="btn btn-green">💬</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

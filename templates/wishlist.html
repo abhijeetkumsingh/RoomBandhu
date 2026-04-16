@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Saved Rooms — Room Bandhu{% endblock %}
+
+{% block content %}
+<div class="wishlist-page">
+  <div class="page-header">
+    <h1>❤ Saved Rooms</h1>
+    <p>Rooms you've bookmarked to revisit later</p>
+  </div>
+
+  {% if not rooms %}
+    <div class="empty-state" style="background:var(--card);border-radius:var(--radius);border:1px solid var(--border)">
+      <div class="big-icon">🤍</div>
+      <h3>No saved rooms yet</h3>
+      <p>Tap the heart on any room to save it here</p>
+      <a href="{{ url_for('home') }}" class="btn btn-accent btn-lg" style="margin-top:16px;display:inline-block">
+        Explore Rooms
+      </a>
+    </div>
+  {% else %}
+    <div class="rooms-grid">
+      {% for r in rooms %}
+        {% set img = r.images[0] if r.images else None %}
+        <div class="room-card">
+          <div class="card-img">
+            {% if img %}
+              <img src="{{ url_for('static', filename='uploads/' + img.filename) }}" alt="{{ r.title }}" loading="lazy">
+            {% else %}
+              <div class="img-placeholder">🏠</div>
+            {% endif %}
+            <div class="card-badges">
+              <span class="badge badge-type">{{ r.room_type }}</span>
+            </div>
+            <button class="wish-btn active" onclick="toggleWish(this, {{ r.id }})">❤️</button>
+          </div>
+          <div class="card-body">
+            <div class="card-title">{{ r.title }}</div>
+            <div class="card-loc">📍 {{ r.location }}</div>
+            <div class="card-price">₹{{ '{:,}'.format(r.rent) }}<small>/month</small></div>
+            <div class="tags">
+              {% for f in r.facilities_list()[:3] %}
+                <span class="tag">{{ f }}</span>
+              {% endfor %}
+            </div>
+            <div class="card-footer">
+              <div class="stars-row">
+                {% set rating = r.avg_rating() %}
+                {% for i in range(1,6) %}
+                  <span style="color:{{ '#F5A623' if i <= rating|round else '#ddd' }};font-size:13px">★</span>
+                {% endfor %}
+                <span class="rating-num">{{ rating }}</span>
+              </div>
+              <div class="card-actions">
+                <a href="{{ url_for('room_detail', room_id=r.id) }}" class="btn btn-outline">Details</a>
+                <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room "' + r.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
+                   target="_blank" class="btn btn-green">💬</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
