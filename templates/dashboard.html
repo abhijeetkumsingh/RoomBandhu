@@ -66,11 +66,11 @@
       <div class="my-room-info">
         <div class="my-room-title">{{ r.title }}</div>
         <div class="my-room-meta">
-          ₹{{ '{:,}'.format(r.rent) }}/mo &middot; {{ r.room_type }} &middot;
-          📍 {{ r.location }} &middot;
-          ⭐ {{ r.avg_rating() if r.reviews else 0 }} ({{ (r.reviews or [])|length }}) &middot;
-     📷 {{ (r.images or [])|length }} photos
-        </div>
+  ₹{{ '{:,}'.format(r.rent) }}/mo &middot; {{ r.room_type }} &middot;
+  📍 {{ r.location }} &middot;
+  ⭐ {{ r.avg_rating() if r.reviews else 0 }} ({{ (r.reviews or [])|length }}) &middot;
+  📷 {{ (r.images or [])|length }} photos
+</div>
       </div>
 
       <!-- Availability toggle -->
