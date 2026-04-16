@@ -112,8 +112,9 @@ def login_required(f):
     return decorated
 
 def current_user():
-    if 'user_id' in session:
-        return User.query.get(session['user_id'])
+    user_id = session.get('user_id')
+    if user_id:
+        return User.query.get(user_id)
     return None
 
 
@@ -392,12 +393,23 @@ def add_review(room_id):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    user       = current_user()
-    my_rooms   = Room.query.filter_by(user_id=user.id).order_by(Room.created_at.desc()).all()
+    user = current_user()
+
+    # 🔥 IMPORTANT FIX
+    if not user:
+        return redirect(url_for('login'))
+
+    my_rooms = Room.query.filter_by(user_id=user.id)\
+        .order_by(Room.created_at.desc()).all()
+
     wish_count = Wishlist.query.filter_by(user_id=user.id).count()
-    return render_template('dashboard.html', user=user, my_rooms=my_rooms, wish_count=wish_count)
 
-
+    return render_template(
+        'dashboard.html',
+        user=user,
+        my_rooms=my_rooms,
+        wish_count=wish_count
+    )
 # ══════════════════════════════════════════
 #  API — Nearby rooms via lat/lng
 # ══════════════════════════════════════════
