@@ -5,8 +5,10 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import os, uuid, json
 
+import os
+
 app = Flask(__name__)
-app.secret_key = 'roombandhu_secret_key_change_in_production'
+app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret")
 
 # ── Database Config ──────────────────────────────────────
 basedir = os.path.abspath(os.path.dirname(__file__))
