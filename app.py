@@ -4,12 +4,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os, uuid, json
-
-import os
+from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret")
 basedir = os.path.abspath(os.path.dirname(__file__))
+serializer = URLSafeTimedSerializer(app.secret_key)
 
 # ── Database Config ──────────────────────────────────────
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
