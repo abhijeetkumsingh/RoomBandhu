@@ -9,6 +9,7 @@ import os
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret")
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 # ── Database Config ──────────────────────────────────────
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
@@ -159,18 +160,26 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email    = request.form['email'].strip().lower()
-        password = request.form['password']
-        user     = User.query.filter_by(email=email).first()
+        email = request.form['email'].strip().lower()
+        password = request.form['password'].strip()
 
-        if user and check_password_hash(user.password, password):
-            session['user_id']   = user.id
+        user = User.query.filter(
+            db.func.lower(User.email) == email
+        ).first()
+
+        if not user:
+            flash('Account not found. Please register first.', 'error')
+            return redirect(url_for('login'))
+
+        if check_password_hash(user.password, password):
+            session.clear()
+            session['user_id'] = user.id
             session['user_name'] = user.name
             flash(f'Welcome back, {user.name}!', 'success')
-            return redirect(url_for('home'))
-        else:
-            flash('Invalid email or password', 'error')
-            return redirect(url_for('login'))
+            return redirect(url_for('dashboard'))
+
+        flash('Incorrect password', 'error')
+        return redirect(url_for('login'))
 
     return render_template('auth.html', mode='login')
 
