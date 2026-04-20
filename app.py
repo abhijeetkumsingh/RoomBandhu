@@ -12,8 +12,20 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 serializer = URLSafeTimedSerializer(app.secret_key)
 
 # ── Database Config ──────────────────────────────────────
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+# ── Database Config ──────────────────────
+db_url = os.environ.get("DATABASE_URL")
+
+if db_url:
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+else:
+    # fallback for local
+    db_url = "sqlite:///" + os.path.join(basedir, "roombandhu.db")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+print("DB URL:", db_url)
 
 # fix for postgres on render
 if app.config['SQLALCHEMY_DATABASE_URI'] and app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
