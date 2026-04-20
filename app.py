@@ -521,7 +521,11 @@ def nearby_rooms():
 # ══════════════════════════════════════════
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+        print("DB Ready")
+    except Exception as e:
+        print("DB Error:", e)
 
 if __name__ == '__main__':
     app.run(debug=True)
