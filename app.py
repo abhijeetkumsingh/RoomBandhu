@@ -189,6 +189,53 @@ def logout():
     session.clear()
     flash('Logged out successfully', 'success')
     return redirect(url_for('home'))
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email'].strip().lower()
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            token = serializer.dumps(email, salt='reset-password')
+            flash(f'Reset link generated. Open: /reset-password/{token}', 'success')
+        else:
+            flash('Email not found', 'error')
+
+        return redirect(url_for('forgot_password'))
+
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        email = serializer.loads(
+            token,
+            salt='reset-password',
+            max_age=1800
+        )
+    except:
+        flash('Reset link expired or invalid', 'error')
+        return redirect(url_for('login'))
+
+    user = User.query.filter_by(email=email).first()
+
+    if request.method == 'POST':
+        password = request.form['password']
+        confirm = request.form['confirm_password']
+
+        if password != confirm:
+            flash('Passwords do not match', 'error')
+            return redirect(request.url)
+
+        user.password = generate_password_hash(password)
+        db.session.commit()
+
+        flash('Password changed successfully. Please login.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html')
+
 
 
 # ══════════════════════════════════════════
