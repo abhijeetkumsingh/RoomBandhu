@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Verify OTP — RoomBandhu{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">📩</span>
+      <h2>Enter <b style="color:var(--accent)">OTP</b></h2>
+      <p>6-digit code sent to <strong>{{ email }}</strong></p>
+    </div>
+    <form method="POST" action="/verify-otp" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label>OTP Code</label>
+        <input type="text" name="otp" class="form-control"
+               placeholder="123456"
+               required maxlength="6" pattern="[0-9]{6}"
+               autocomplete="one-time-code" inputmode="numeric"
+               style="font-size:28px;letter-spacing:10px;text-align:center;font-weight:700;font-family:var(--fh)">
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:-8px;margin-bottom:16px">
+        ⏱ Expires in <strong>10 minutes</strong>
+      </p>
+      <button type="submit" class="btn btn-accent btn-lg btn-full">Verify →</button>
+    </form>
+    <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted)">
+      Didn't get it?
+      <a href="/forgot-password" style="color:var(--accent);font-weight:600">Resend OTP</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

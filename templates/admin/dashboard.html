@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="admin-header">
+  <h1>📊 Dashboard</h1>
+  <span style="font-size:13px;color:#888">Welcome, Admin</span>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-num">{{ total_users }}</span>
+    <div class="stat-lbl">Total Users</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-num">{{ total_rooms }}</span>
+    <div class="stat-lbl">Total Listings</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-num">{{ avail_rooms }}</span>
+    <div class="stat-lbl">Live Rooms</div>
+  </div>
+  <div class="stat-card">
+    <span class="stat-num">{{ total_reviews }}</span>
+    <div class="stat-lbl">Reviews</div>
+  </div>
+</div>
+
+<div class="section-title">Recent Users</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th><th>Email</th><th>Phone</th><th>Auth</th><th>Joined</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in recent_users %}
+      <tr>
+        <td><strong>{{ u.name }}</strong></td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.phone or '—' }}</td>
+        <td>
+          {% if u.google_id %}
+            <span class="bdg bdg-blue">Google</span>
+          {% else %}
+            <span class="bdg bdg-gray">Email</span>
+          {% endif %}
+        </td>
+        <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+        <td><span class="bdg {{ 'bdg-green' if u.is_active else 'bdg-red' }}">{{ 'Active' if u.is_active else 'Suspended' }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section-title">Recent Listings</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Type</th><th>Rent</th><th>Location</th><th>Owner</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for r in recent_rooms %}
+      <tr>
+        <td><a href="{{ url_for('room_detail', room_id=r.id) }}" target="_blank">{{ r.title[:38] }}</a></td>
+        <td>{{ r.room_type }}</td>
+        <td>₹{{ '{:,}'.format(r.rent) }}</td>
+        <td>{{ r.location[:28] }}</td>
+        <td>{{ r.owner.name }}</td>
+        <td><span class="bdg {{ 'bdg-green' if r.is_available else 'bdg-red' }}">{{ 'Live' if r.is_available else 'Hidden' }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

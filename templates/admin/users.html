@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}Users{% endblock %}
+
+{% block admin_content %}
+<div class="admin-header">
+  <h1>👥 Users <span style="font-size:16px;color:#aaa;font-weight:400">({{ users|length }})</span></h1>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Name</th><th>Email</th><th>Phone</th>
+        <th>Auth</th><th>Listings</th><th>Joined</th><th>Status</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td style="color:#aaa">{{ u.id }}</td>
+        <td><strong>{{ u.name }}</strong></td>
+        <td style="word-break:break-all">{{ u.email }}</td>
+        <td>{{ u.phone or '—' }}</td>
+        <td>
+          {% if u.google_id %}
+            <span class="bdg bdg-blue">Google</span>
+          {% else %}
+            <span class="bdg bdg-gray">Email</span>
+          {% endif %}
+        </td>
+        <td>{{ u.rooms|length }}</td>
+        <td style="white-space:nowrap">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+        <td>
+          <span class="bdg {{ 'bdg-green' if u.is_active else 'bdg-red' }}">
+            {{ 'Active' if u.is_active else 'Suspended' }}
+          </span>
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('admin_toggle_user', user_id=u.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                    class="btn {{ 'btn-warn' if u.is_active else 'btn-ok' }}"
+                    onclick="return confirm('{{ 'Suspend' if u.is_active else 'Activate' }} this user?')">
+              {{ 'Suspend' if u.is_active else 'Activate' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Listings{% endblock %}
+
+{% block admin_content %}
+<div class="admin-header">
+  <h1>🏠 Listings <span style="font-size:16px;color:#aaa;font-weight:400">({{ rooms|length }})</span></h1>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Title</th><th>Type</th><th>Rent</th>
+        <th>Location</th><th>Owner</th><th>Photos</th><th>Reviews</th><th>Status</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rooms %}
+      <tr>
+        <td style="color:#aaa">{{ r.id }}</td>
+        <td>
+          <a href="{{ url_for('room_detail', room_id=r.id) }}" target="_blank"
+             style="max-width:180px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            {{ r.title[:40] }}
+          </a>
+        </td>
+        <td><span class="bdg bdg-gray">{{ r.room_type }}</span></td>
+        <td style="white-space:nowrap">₹{{ '{:,}'.format(r.rent) }}</td>
+        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.location }}</td>
+        <td>{{ r.owner.name }}</td>
+        <td>{{ r.images|length }}</td>
+        <td>{{ r.reviews|length }}</td>
+        <td>
+          <span class="bdg {{ 'bdg-green' if r.is_available else 'bdg-red' }}">
+            {{ 'Live' if r.is_available else 'Hidden' }}
+          </span>
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('admin_delete_room', room_id=r.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-del"
+                    onclick="return confirm('Delete this listing permanently?')">
+              Delete
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Admin{% endblock %} — RoomBandhu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f2ee;color:#1a1a1a;display:flex;min-height:100vh}
+
+    /* Sidebar */
+    .sidebar{width:220px;background:#1a1a1a;min-height:100vh;padding:24px 16px;display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:100}
+    .sidebar-logo{font-family:'Syne',sans-serif;font-size:17px;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+    .sidebar-logo span{color:#e05c2c}
+    .sidebar-sub{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.7px;margin-bottom:28px;padding-left:2px}
+    .nav-item{display:flex;align-items:center;gap:9px;color:#888;text-decoration:none;padding:10px 12px;border-radius:9px;font-size:14px;font-weight:500;margin-bottom:3px;transition:background .15s,color .15s}
+    .nav-item:hover,.nav-item.active{background:#2a2a2a;color:#fff}
+    .nav-item.danger{color:#f87171;margin-top:auto}
+    .nav-item.danger:hover{background:#2a1a1a}
+    .sidebar-spacer{flex:1}
+
+    /* Main content */
+    .admin-main{margin-left:220px;padding:28px 28px 48px;flex:1;min-width:0}
+    .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+    .admin-header h1{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+
+    /* Stats */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:28px}
+    .stat-card{background:#fff;border-radius:12px;padding:18px;border:1px solid #e8e3dc;text-align:center}
+    .stat-num{display:block;font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:#e05c2c}
+    .stat-lbl{font-size:12px;color:#888;margin-top:3px}
+
+    /* Table */
+    .table-wrap{background:#fff;border-radius:14px;border:1px solid #e8e3dc;overflow:hidden;overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:600px}
+    th{background:#f9f6f2;padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+    td{padding:11px 14px;border-top:1px solid #f0ede8;font-size:13px;vertical-align:middle}
+    tr:hover td{background:#fdfcfb}
+
+    /* Badges */
+    .bdg{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+    .bdg-green{background:#e6f9f1;color:#1a7a52}
+    .bdg-red  {background:#fff0eb;color:#c94f24}
+    .bdg-blue {background:#e8f4fd;color:#1a73e8}
+    .bdg-gray {background:#f0ede8;color:#666}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:background .15s}
+    .btn-del{background:#fff0eb;color:#c94f24;border:1px solid #fcc}
+    .btn-del:hover{background:#ffe0d4}
+    .btn-ok{background:#e6f9f1;color:#1a7a52;border:1px solid #b2f0d6}
+    .btn-ok:hover{background:#d0f5e6}
+    .btn-warn{background:#fff0eb;color:#c94f24;border:1px solid #fcc}
+
+    /* Flash */
+    .flash{padding:11px 14px;border-radius:9px;font-size:13px;font-weight:500;margin-bottom:16px;border-left:3px solid}
+    .flash.success{background:#e6f9f1;color:#1a7a52;border-color:#22c55e}
+    .flash.error  {background:#fff0eb;color:#c94f24;border-color:#e05c2c}
+
+    a{color:#e05c2c;text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    .section-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin:24px 0 12px}
+
+    /* Mobile sidebar toggle */
+    @media(max-width:700px){
+      .sidebar{transform:translateX(-100%);transition:transform .25s}
+      .sidebar.open{transform:none}
+      .admin-main{margin-left:0;padding:16px}
+      .mob-menu-btn{display:flex}
+    }
+    .mob-menu-btn{display:none;background:#1a1a1a;color:#fff;border:none;padding:9px 13px;border-radius:9px;font-size:18px;cursor:pointer;margin-bottom:14px}
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="admin-sidebar">
+    <div>
+      <div class="sidebar-logo">🏠 Room<span>Bandhu</span></div>
+      <div class="sidebar-sub">Admin Panel</div>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="nav-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">📊 Dashboard</a>
+    <a href="{{ url_for('admin_users') }}"     class="nav-item {% if request.endpoint == 'admin_users' %}active{% endif %}">👥 Users</a>
+    <a href="{{ url_for('admin_rooms') }}"     class="nav-item {% if request.endpoint == 'admin_rooms' %}active{% endif %}">🏠 Listings</a>
+    <a href="{{ url_for('home') }}"            class="nav-item" target="_blank">🌐 View Site</a>
+    <div class="sidebar-spacer"></div>
+    <a href="{{ url_for('admin_logout') }}"    class="nav-item danger">← Logout</a>
+  </div>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <button class="mob-menu-btn" onclick="document.getElementById('admin-sidebar').classList.toggle('open')">☰</button>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block admin_content %}{% endblock %}
+  </div>
+
+</body>
+</html>

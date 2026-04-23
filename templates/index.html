@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Room Bandhu — Find Student Rooms{% endblock %}
+{% block title %}RoomBandhu — Find Student Rooms{% endblock %}
 
 {% block content %}
 
@@ -10,7 +10,7 @@
 
   <form class="search-wrap" method="GET" action="/">
     <div class="search-box">
-      <span style="font-size:20px;padding:0 2px 0 4px">🔍</span>
+      <span style="font-size:20px;padding:0 2px 0 4px;flex-shrink:0">🔍</span>
       <input type="text" name="q" value="{{ query }}"
              placeholder="Search by location, college, area...">
       <button type="submit" class="search-btn">Search</button>
@@ -22,7 +22,7 @@
   </button>
 
   <svg class="hero-wave" viewBox="0 0 900 36" preserveAspectRatio="none"
-       xmlns="http://www.w3.org/2000/svg">
+       xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M0,18 C150,36 300,0 450,18 C600,36 750,0 900,18 L900,36 L0,36 Z"
           fill="#F5F2EE"/>
   </svg>
@@ -38,20 +38,22 @@
 
   <form method="GET" action="/" id="filter-form" style="display:contents">
     <input type="hidden" name="type" value="{{ active_type }}">
-    <input type="hidden" name="q" value="{{ query }}">
+    <input type="hidden" name="q"    value="{{ query }}">
 
-    <select name="max_price" class="chip" onchange="document.getElementById('filter-form').submit()">
-      <option value="0" {% if not max_price %}selected{% endif %}>Any Price</option>
+    <select name="max_price" class="chip"
+            onchange="document.getElementById('filter-form').submit()">
+      <option value="0"    {% if not max_price  %}selected{% endif %}>Any Price</option>
       <option value="2000" {% if max_price==2000 %}selected{% endif %}>Under ₹2,000</option>
       <option value="3500" {% if max_price==3500 %}selected{% endif %}>Under ₹3,500</option>
       <option value="5000" {% if max_price==5000 %}selected{% endif %}>Under ₹5,000</option>
     </select>
 
-    <select name="sort" class="chip" onchange="document.getElementById('filter-form').submit()">
-      <option value="default" {% if sort=='default' %}selected{% endif %}>Sort: Default</option>
-      <option value="price-asc" {% if sort=='price-asc' %}selected{% endif %}>Price: Low → High</option>
+    <select name="sort" class="chip"
+            onchange="document.getElementById('filter-form').submit()">
+      <option value="default"    {% if sort=='default'    %}selected{% endif %}>Sort: Default</option>
+      <option value="price-asc"  {% if sort=='price-asc'  %}selected{% endif %}>Price: Low → High</option>
       <option value="price-desc" {% if sort=='price-desc' %}selected{% endif %}>Price: High → Low</option>
-      <option value="rating" {% if sort=='rating' %}selected{% endif %}>Top Rated</option>
+      <option value="rating"     {% if sort=='rating'     %}selected{% endif %}>Top Rated</option>
     </select>
   </form>
 </div>
@@ -59,7 +61,7 @@
 <!-- ══ MAIN CONTENT ═══════════════════════ -->
 <div class="main">
 
-  <!-- Nearby rooms panel (populated via JS) -->
+  <!-- Nearby rooms panel (JS populated) -->
   <div class="nearby-panel" id="nearby-panel"></div>
 
   <div class="section-head">
@@ -68,7 +70,7 @@
       <span class="count-pill">{{ rooms|length }} room{{ 's' if rooms|length != 1 else '' }}</span>
     </div>
     {% if session.user_id %}
-      <a href="{{ url_for('add_room') }}" class="btn btn-accent btn-outline">+ List Your Room</a>
+      <a href="{{ url_for('add_room') }}" class="btn btn-accent">+ List Your Room</a>
     {% endif %}
   </div>
 
@@ -107,7 +109,8 @@
 
           {% if session.user_id %}
             <button class="wish-btn {% if r.id in wish_ids %}active{% endif %}"
-                    onclick="toggleWish(this, {{ r.id }})">
+                    onclick="toggleWish(this, {{ r.id }})"
+                    aria-label="Save room">
               {{ '❤️' if r.id in wish_ids else '🤍' }}
             </button>
           {% endif %}
@@ -134,8 +137,8 @@
             </div>
             <div class="card-actions">
               <a href="{{ url_for('room_detail', room_id=r.id) }}" class="btn btn-outline">Details</a>
-              <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room listing "' + r.title + '" on Room Bandhu. Is it still available?')|urlencode }}"
-                 target="_blank" class="btn btn-green">💬</a>
+              <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room listing "' + r.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
+                 target="_blank" rel="noopener" class="btn btn-green">💬</a>
             </div>
           </div>
         </div>

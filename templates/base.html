@@ -3,84 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Room Bandhu{% endblock %}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="theme-color" content="#0F1923">
+  <title>{% block title %}RoomBandhu{% endblock %}</title>
+
+  <!-- Fonts: Poppins + Inter (same as old design) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/favicon.png') }}">
   {% block extra_head %}{% endblock %}
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
 
-<!-- ══ NAVBAR ══════════════════════════════ -->
+<!-- ══ NAVBAR ═══════════════════════════════════════════════ -->
 <nav class="navbar" id="navbar">
   <div class="nav-inner">
+
     <a href="{{ url_for('home') }}" class="logo">
       <span class="logo-icon">🏠</span>
       <span>Room<b>Bandhu</b></span>
     </a>
 
-    <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <button class="hamburger" id="hamburger"
+            onclick="toggleMenu()" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
 
     <div class="nav-links" id="nav-links">
       <a href="{{ url_for('home') }}" class="nav-link">Explore</a>
+
       {% if session.user_id %}
         <a href="{{ url_for('wishlist') }}" class="nav-link">
           ❤ Wishlist
-          <span class="nav-badge" id="wish-badge">
-            {{ wishlist_count or 0 }}
-          </span>
+          <span class="nav-badge" id="wish-badge">{{ wishlist_count or 0 }}</span>
         </a>
         <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
         <a href="{{ url_for('add_room') }}" class="nav-btn-accent">+ Add Room</a>
+
         <div class="user-menu">
-          <button class="user-avatar" onclick="toggleUserMenu()">
+          <button class="user-avatar" onclick="toggleUserMenu()" aria-label="Account">
             {{ session.user_name[0].upper() }}
           </button>
           <div class="user-dropdown" id="user-dropdown">
             <div class="user-name">{{ session.user_name }}</div>
-            <a href="{{ url_for('dashboard') }}">My Rooms</a>
-            <a href="{{ url_for('wishlist') }}">Saved Rooms</a>
-            <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+            <a href="{{ url_for('dashboard') }}">📊 My Rooms</a>
+            <a href="{{ url_for('wishlist') }}">❤️ Saved Rooms</a>
+            <a href="{{ url_for('edit_profile') }}">✏️ Edit Profile</a>
+            <a href="{{ url_for('logout') }}" class="logout-link">→ Logout</a>
           </div>
         </div>
+
       {% else %}
-        <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+        <a href="{{ url_for('login') }}"    class="nav-link">Login</a>
         <a href="{{ url_for('register') }}" class="nav-btn-accent">Sign Up Free</a>
       {% endif %}
     </div>
+
   </div>
 </nav>
 
-<!-- ══ FLASH MESSAGES ══════════════════════ -->
+<!-- ══ FLASH MESSAGES ════════════════════════════════════════ -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="flash-container">
+    <div class="flash-container" role="alert" aria-live="polite">
       {% for category, message in messages %}
         <div class="flash flash-{{ category }}">
           {{ '✅' if category == 'success' else '⚠️' }} {{ message }}
-          <button onclick="this.parentElement.remove()">×</button>
+          <button onclick="this.parentElement.remove()" aria-label="Close">×</button>
         </div>
       {% endfor %}
     </div>
   {% endif %}
 {% endwith %}
 
-<!-- ══ PAGE CONTENT ═══════════════════════ -->
+<!-- ══ PAGE CONTENT ══════════════════════════════════════════ -->
 {% block content %}{% endblock %}
 
-<!-- ══ FOOTER ═════════════════════════════ -->
+<!-- ══ FOOTER ════════════════════════════════════════════════ -->
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-brand">
       <span class="logo-icon">🏠</span>
-      <strong>RoomBandhu</strong>
-      <p>Find your perfect student room near any college in Bihar &amp; beyond.</p>
+      <div>
+        <strong>RoomBandhu</strong>
+        <p>Student rooms near every college in Bihar &amp; beyond.</p>
+      </div>
     </div>
     <div class="footer-links">
-      <span>© 2026 RoomBandhu Made By Abhijeet Kumar Singh</span>
+      <span>© 2026 RoomBandhu — By Abhijeet Kumar Singh</span>
       <a href="#">Privacy</a>
       <a href="#">Terms</a>
       <a href="#">Contact</a>

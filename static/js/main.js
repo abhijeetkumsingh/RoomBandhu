@@ -1,206 +1,114 @@
-/* ══════════════════════════════════════════
-   MAIN.JS — Room Bandhu
-══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   RoomBandhu — main.js  (mobile-first, CSRF-safe)
+   ═══════════════════════════════════════════════════════════ */
 
-/* ── Nav toggle ───────────────────────── */
-function toggleMenu() {
-  const nav = document.getElementById('nav-links');
-  const ham = document.getElementById('hamburger');
-  if (nav) nav.classList.toggle('open');
-  if (ham) ham.classList.toggle('active');
+'use strict';
+
+/* ── CSRF token ──────────────────────────────────────────── */
+function csrf() {
+  const m = document.querySelector('meta[name="csrf-token"]');
+  return m ? m.getAttribute('content') : '';
 }
 
-function toggleUserMenu() {
-  document.getElementById('user-dropdown')?.classList.toggle('open');
-}
-
-document.addEventListener('click', (e) => {
-  const dd = document.getElementById('user-dropdown');
-  const av = document.querySelector('.user-avatar');
-  if (dd && !dd.contains(e.target) && av && !av.contains(e.target)) {
-    dd.classList.remove('open');
-  }
-  // Close mobile nav on outside click
-  const nav = document.getElementById('nav-links');
-  const ham = document.getElementById('hamburger');
-  if (nav && nav.classList.contains('open')) {
-    if (!nav.contains(e.target) && ham && !ham.contains(e.target)) {
-      nav.classList.remove('open');
-      ham.classList.remove('active');
-    }
-  }
-});
-
-/* ── Auto-hide flash messages ─────────── */
-document.querySelectorAll('.flash').forEach(f => {
-  setTimeout(() => f.style.opacity = '0', 3500);
-  setTimeout(() => f.remove(), 4000);
-});
-
-/* ── Wishlist toggle (AJAX) ───────────── */
-function toggleWish(btn, roomId) {
-  fetch(`/wishlist/toggle/${roomId}`, {
+/* ── post helper ─────────────────────────────────────────── */
+function post(url) {
+  return fetch(url, {
     method: 'POST',
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.error) { window.location = '/login'; return; }
-    btn.classList.toggle('active', data.saved);
-    btn.textContent = data.saved ? '❤️' : '🤍';
-    const badge = document.getElementById('wish-badge');
-    if (badge) badge.textContent = data.count;
-    showToast(data.saved ? '❤ Saved to wishlist!' : 'Removed from wishlist');
-  })
-  .catch(() => window.location = '/login');
-}
-
-/* ── Toast notification ───────────────── */
-let toastTimer;
-function showToast(msg) {
-  let t = document.getElementById('toast-msg');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast-msg';
-    t.style.cssText = `
-      position:fixed;bottom:24px;right:20px;background:#0F1923;color:#fff;
-      padding:12px 20px;border-radius:12px;font-size:14px;z-index:999;
-      transform:translateY(80px);opacity:0;transition:all 0.3s;
-      pointer-events:none;max-width:280px;font-family:'Plus Jakarta Sans',sans-serif;
-      box-shadow:0 8px 32px rgba(0,0,0,0.25);
-    `;
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.transform = 'translateY(0)';
-  t.style.opacity = '1';
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    t.style.transform = 'translateY(80px)';
-    t.style.opacity = '0';
-  }, 2800);
-}
-
-/* ── Star rating input ────────────────── */
-function initStarRating(containerId, inputId) {
-  const container = document.getElementById(containerId);
-  const input = document.getElementById(inputId);
-  if (!container || !input) return;
-  let val = 0;
-  container.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      val = parseInt(btn.dataset.star);
-      input.value = val;
-      updateStars(container, val);
-    });
-    btn.addEventListener('mouseenter', () => updateStars(container, parseInt(btn.dataset.star)));
-    btn.addEventListener('mouseleave', () => updateStars(container, val));
+    headers: { 'X-CSRFToken': csrf(), 'Content-Type': 'application/json' }
   });
 }
 
-function updateStars(container, n) {
-  container.querySelectorAll('button').forEach(btn => {
-    btn.classList.toggle('filled', parseInt(btn.dataset.star) <= n);
-  });
+/* ── Navbar scroll shadow ────────────────────────────────── */
+const _nav = document.getElementById('navbar');
+if (_nav) {
+  window.addEventListener('scroll', () => {
+    _nav.classList.toggle('scrolled', window.scrollY > 8);
+  }, { passive: true });
 }
 
-/* ── Image Upload Preview ─────────────── */
-let selectedFiles = [];
-
-function initImageUpload(dropzoneId, inputId, previewId, counterId, minImages) {
-  const dropzone = document.getElementById(dropzoneId);
-  const input    = document.getElementById(inputId);
-  const preview  = document.getElementById(previewId);
-  const counter  = document.getElementById(counterId);
-  if (!dropzone || !input) return;
-
-  dropzone.addEventListener('click', () => input.click());
-  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-  dropzone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropzone.classList.remove('drag-over');
-    handleFiles([...e.dataTransfer.files]);
-  });
-  input.addEventListener('change', () => handleFiles([...input.files]));
-
-  function handleFiles(files) {
-    const valid = files.filter(f => ['image/jpeg','image/png','image/webp'].includes(f.type));
-    selectedFiles = [...selectedFiles, ...valid].slice(0, 10); // max 10
-    renderPreviews();
-  }
-
-  function renderPreviews() {
-    if (!preview) return;
-    preview.innerHTML = '';
-    selectedFiles.forEach((file, i) => {
-      const url   = URL.createObjectURL(file);
-      const item  = document.createElement('div');
-      item.className = 'preview-item' + (i === 0 ? ' primary' : '');
-      item.innerHTML = `
-        <img src="${url}" alt="">
-        ${i === 0 ? '<div class="preview-label">Primary</div>' : ''}
-        <button type="button" class="preview-remove" onclick="removeImage(${i})">×</button>
-      `;
-      preview.appendChild(item);
-    });
-    // Update the real file input via DataTransfer
-    const dt = new DataTransfer();
-    selectedFiles.forEach(f => dt.items.add(f));
-    input.files = dt.files;
-    // Update counter
-    if (counter) {
-      const ok = selectedFiles.length >= minImages;
-      counter.className = 'img-counter ' + (ok ? 'ok' : 'warn');
-      counter.textContent = selectedFiles.length < minImages
-        ? `${selectedFiles.length}/${minImages} images (need ${minImages - selectedFiles.length} more)`
-        : `✓ ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} selected`;
-    }
-  }
-  renderPreviews();
+/* ── Hamburger menu ──────────────────────────────────────── */
+function toggleMenu() {
+  const links = document.getElementById('nav-links');
+  const ham   = document.getElementById('hamburger');
+  links && links.classList.toggle('open');
+  ham   && ham.classList.toggle('open');
 }
 
-function removeImage(index) {
-  selectedFiles.splice(index, 1);
-  // Re-trigger render
-  const event = new Event('_rerender');
-  document.dispatchEvent(event);
-}
-
-document.addEventListener('_rerender', () => {
-  // Find active upload init and re-render
-  const preview = document.getElementById('img-preview');
-  const counter = document.getElementById('img-counter');
-  const input   = document.getElementById('room-images');
-  if (!preview || !input) return;
-  preview.innerHTML = '';
-  selectedFiles.forEach((file, i) => {
-    const url  = URL.createObjectURL(file);
-    const item = document.createElement('div');
-    item.className = 'preview-item' + (i === 0 ? ' primary' : '');
-    item.innerHTML = `
-      <img src="${url}">
-      ${i === 0 ? '<div class="preview-label">Primary</div>' : ''}
-      <button type="button" class="preview-remove" onclick="removeImage(${i})">×</button>
-    `;
-    preview.appendChild(item);
-  });
-  const dt = new DataTransfer();
-  selectedFiles.forEach(f => dt.items.add(f));
-  input.files = dt.files;
-  if (counter) {
-    const ok = selectedFiles.length >= 4;
-    counter.className = 'img-counter ' + (ok ? 'ok' : 'warn');
-    counter.textContent = selectedFiles.length < 4
-      ? `${selectedFiles.length}/4 images (need ${4 - selectedFiles.length} more)`
-      : `✓ ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} selected`;
+/* Close menu on outside click */
+document.addEventListener('click', e => {
+  const links = document.getElementById('nav-links');
+  const ham   = document.getElementById('hamburger');
+  if (links && links.classList.contains('open') &&
+      !links.contains(e.target) && !ham.contains(e.target)) {
+    links.classList.remove('open');
+    ham && ham.classList.remove('open');
   }
 });
 
-/* ── Geolocation / Nearby ─────────────── */
+/* ── User dropdown ───────────────────────────────────────── */
+function toggleUserMenu() {
+  document.getElementById('user-dropdown')?.classList.toggle('show');
+}
+document.addEventListener('click', e => {
+  const dd = document.getElementById('user-dropdown');
+  if (dd && !e.target.closest('.user-menu')) dd.classList.remove('show');
+});
+
+/* ── Flash auto-dismiss ──────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.flash').forEach(el => {
+    setTimeout(() => {
+      el.style.transition = 'opacity .35s, transform .35s';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-6px)';
+      setTimeout(() => el.remove(), 380);
+    }, 4200);
+  });
+});
+
+/* ── Wishlist toggle ─────────────────────────────────────── */
+function toggleWish(btn, roomId) {
+  post(`/wishlist/toggle/${roomId}`)
+    .then(r => r.json())
+    .then(data => {
+      btn.textContent = data.saved ? '❤️' : '🤍';
+      btn.classList.toggle('active', data.saved);
+
+      const badge = document.getElementById('wish-badge');
+      if (badge) badge.textContent = data.count;
+
+      // On wishlist page — animate out removed card
+      if (!data.saved && window.location.pathname === '/wishlist') {
+        const card = btn.closest('.room-card');
+        if (card) {
+          card.style.transition = 'opacity .3s, transform .3s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(.94)';
+          setTimeout(() => card.remove(), 320);
+        }
+      }
+    })
+    .catch(err => console.warn('Wishlist error:', err));
+}
+
+/* ── Availability toggle (dashboard) ────────────────────── */
+function toggleAvailability(roomId, checkbox) {
+  post(`/toggle_availability/${roomId}`)
+    .then(r => r.json())
+    .then(data => {
+      const row   = checkbox.closest('.my-room-row');
+      const label = row ? row.querySelector('.avail-label') : null;
+      if (label) label.textContent = data.available ? 'Live' : 'Hidden';
+    })
+    .catch(() => { checkbox.checked = !checkbox.checked; }); // revert on error
+}
+
+/* ── Nearby rooms ────────────────────────────────────────── */
 function getNearbyRooms() {
   const btn = document.getElementById('nearby-btn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '📍 Locating... <span class="spinner"></span>'; }
+  if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
+
+  if (btn) { btn.textContent = '📍 Getting location…'; btn.disabled = true; }
 
   navigator.geolocation.getCurrentPosition(
     pos => {
@@ -208,113 +116,144 @@ function getNearbyRooms() {
       fetch(`/api/nearby?lat=${latitude}&lng=${longitude}`)
         .then(r => r.json())
         .then(rooms => {
-          renderNearbyPanel(rooms, latitude, longitude);
-          if (btn) { btn.disabled = false; btn.innerHTML = '📍 Rooms Near Me'; }
+          renderNearby(rooms);
+          if (btn) { btn.textContent = '📍 Rooms Near Me'; btn.disabled = false; }
         })
         .catch(() => {
-          showToast('Could not load nearby rooms');
-          if (btn) { btn.disabled = false; btn.innerHTML = '📍 Rooms Near Me'; }
+          if (btn) { btn.textContent = '📍 Rooms Near Me'; btn.disabled = false; }
         });
     },
-    err => {
-      showToast('Please allow location access');
-      if (btn) { btn.disabled = false; btn.innerHTML = '📍 Rooms Near Me'; }
+    () => {
+      alert('Could not get your location. Please allow location access and try again.');
+      if (btn) { btn.textContent = '📍 Rooms Near Me'; btn.disabled = false; }
     },
     { timeout: 8000 }
   );
 }
 
-function renderNearbyPanel(rooms, lat, lng) {
+function renderNearby(rooms) {
   const panel = document.getElementById('nearby-panel');
   if (!panel) return;
   if (!rooms.length) {
-    panel.innerHTML = '<p style="color:var(--muted);font-size:14px">No rooms found near your location yet. Be the first to add one!</p>';
-    panel.classList.add('show');
+    panel.innerHTML = '<p style="color:var(--muted);padding:12px 0;font-size:14px">No nearby rooms found with GPS coordinates.</p>';
     return;
   }
   panel.innerHTML = `
-    <h4>📍 Rooms Near You</h4>
-    <div class="nearby-list">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="font-family:var(--fh);font-size:17px;font-weight:700">📍 Rooms Near You</h3>
+      <button onclick="document.getElementById('nearby-panel').innerHTML=''"
+              style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+    <div class="rooms-grid">
       ${rooms.map(r => `
-        <a class="nearby-card" href="/room/${r.id}">
-          ${r.image
-            ? `<img src="/static/uploads/${r.image}" alt="${r.title}">`
-            : `<div style="width:100%;height:100px;background:#f0ede8;display:flex;align-items:center;justify-content:center;font-size:28px">🏠</div>`
-          }
-          <div class="nc-body">
-            <div class="nc-title">${r.title}</div>
-            <div class="nc-meta">${r.location}</div>
-            <div class="nc-price">₹${r.rent.toLocaleString()}/mo</div>
-            <div class="nc-dist">📍 ${r.distance_km} km away</div>
+        <div class="room-card" style="cursor:pointer" onclick="location.href='/room/${r.id}'">
+          <div class="card-img">
+            ${r.image
+              ? `<img src="/static/uploads/${r.image}" alt="${r.title}" loading="lazy">`
+              : `<div class="img-placeholder">🏠</div>`}
+            <div class="card-badges"><span class="badge badge-type">${r.type}</span></div>
           </div>
-        </a>`).join('')}
+          <div class="card-body">
+            <div class="card-title">${r.title}</div>
+            <div class="card-loc">📍 ${r.location}</div>
+            <div class="card-price">₹${r.rent.toLocaleString('en-IN')}<small>/month</small></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">
+              📏 ${r.distance_km} km away · ⭐ ${r.rating}
+            </div>
+          </div>
+        </div>`).join('')}
     </div>`;
-  panel.classList.add('show');
 }
 
-/* ── Get location for Add Room form ───── */
+/* ── GPS capture for add-room form ──────────────────────── */
 function getFormLocation() {
   const btn = document.getElementById('get-loc-btn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '📍 Getting location...'; }
+  if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+  if (btn) { btn.textContent = '📍 Locating…'; btn.disabled = true; }
 
   navigator.geolocation.getCurrentPosition(
     pos => {
-      const { latitude, longitude } = pos.coords;
-      document.getElementById('lat-input').value  = latitude;
-      document.getElementById('lng-input').value  = longitude;
-      // Reverse geocode with Nominatim (free, no API key needed)
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-        .then(r => r.json())
-        .then(data => {
-          const addr = data.address;
-          const loc  = [addr.suburb || addr.neighbourhood, addr.city || addr.town, addr.state].filter(Boolean).join(', ');
-          const locInput = document.getElementById('location-input');
-          if (locInput && !locInput.value) locInput.value = loc;
-          showToast('✅ Location captured!');
-        })
-        .catch(() => showToast('✅ Coordinates saved'));
-      if (btn) { btn.disabled = false; btn.innerHTML = '✅ Location Captured'; }
+      document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('lng-input').value = pos.coords.longitude.toFixed(6);
+      if (btn) {
+        btn.textContent = '✅ Location captured!';
+        btn.style.background = '#e6f9f1';
+        btn.style.color = '#1a7a52';
+        btn.style.borderColor = '#b2f0d6';
+      }
     },
     () => {
-      showToast('Location access denied');
-      if (btn) { btn.disabled = false; btn.innerHTML = '📍 Use My Location'; }
+      alert('Could not get location. Please try again.');
+      if (btn) { btn.textContent = '📍 Use My Current Location'; btn.disabled = false; }
     },
     { timeout: 8000 }
   );
 }
 
-/* ── Availability toggle (dashboard) ─── */
-function toggleAvailability(roomId, checkbox) {
-  fetch(`/toggle_availability/${roomId}`, { method: 'POST' })
-    .then(r => r.json())
-    .then(data => {
-      showToast(data.available ? 'Room marked as available' : 'Room marked as unavailable');
-    });
-}
+/* ── Image upload with drag-drop & preview ───────────────── */
+function initImageUpload(dropzoneId, inputId, previewId, counterId, minImages) {
+  const zone    = document.getElementById(dropzoneId);
+  const input   = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  const counter = document.getElementById(counterId);
+  if (!zone || !input) return;
 
-/* ── Form validation ──────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  const addForm = document.getElementById('add-room-form');
-  if (addForm) {
-    addForm.addEventListener('submit', e => {
-      const imgInput = document.getElementById('room-images');
-      if (!imgInput || imgInput.files.length < 4) {
-        e.preventDefault();
-        showToast('⚠️ Please upload at least 4 room images');
-        document.getElementById('img-dropzone')?.scrollIntoView({ behavior: 'smooth' });
-        return;
-      }
-      const btn = addForm.querySelector('.submit-btn');
-      if (btn) { btn.disabled = true; btn.innerHTML = 'Submitting... <span class="spinner"></span>'; }
+  let files = [];
+
+  zone.addEventListener('click',     () => input.click());
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    addFiles([...e.dataTransfer.files]);
+  });
+  input.addEventListener('change', () => addFiles([...input.files]));
+
+  function addFiles(newFiles) {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    newFiles.forEach(f => {
+      if (files.length >= 10) return;
+      if (!allowed.includes(f.type)) return;
+      files.push(f);
     });
+    render(); sync();
   }
 
-  // Auth tab switch
-  const tabs = document.querySelectorAll('.auth-tab');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const mode = tab.dataset.mode;
-      window.location = mode === 'login' ? '/login' : '/register';
+  function render() {
+    if (!preview) return;
+    preview.innerHTML = '';
+    files.forEach((f, i) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `<img src="${e.target.result}" alt="">
+          <button type="button" onclick="__rb_removeImg(${i})" class="remove-img">×</button>
+          ${i === 0 ? '<span class="cover-label">Cover</span>' : ''}`;
+        preview.appendChild(div);
+      };
+      reader.readAsDataURL(f);
     });
-  });
-});
+    updateCounter();
+  }
+
+  function updateCounter() {
+    if (!counter) return;
+    const need = Math.max(0, minImages - files.length);
+    counter.textContent = need > 0
+      ? `${files.length}/${minImages} photos (need ${need} more)`
+      : `${files.length} photos selected ✅`;
+    counter.className = 'img-counter ' + (need > 0 ? 'warn' : 'ok');
+  }
+
+  function sync() {
+    try {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      input.files = dt.files;
+    } catch(e) {} // DataTransfer not available in all envs
+  }
+
+  window.__rb_removeImg = i => { files.splice(i, 1); render(); sync(); };
+}
