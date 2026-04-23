@@ -1,6 +1,5 @@
 # 🏠 RoomBandhu
 
-**Student room listing platform for Bihar & beyond.**
 Find affordable single rooms, shared rooms, and PGs near your college.
 
 ---
@@ -53,8 +52,6 @@ RoomBandhu/
 ### 2. Setup
 
 ```bash
-# Clone or unzip the project
-cd RoomBandhu
 
 # Create and activate virtual environment
 python -m venv venv
@@ -74,8 +71,6 @@ python app.py
 
 Open → **http://localhost:5000**
 
-> **Tip:** Without `MAIL_USERNAME`/`MAIL_PASSWORD` configured, OTPs will be shown  
-> in the flash message bar (dev mode only) so you can test the password reset flow.
 
 ---
 
@@ -111,27 +106,6 @@ Open → **http://localhost:5000**
 | Email    | `admin@roombandhu.com` |
 | Password | `Admin@Secure123`      |
 
-> ⚠️ **Change `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your `.env` before deploying!**
-
----
-
-## 🔑 Required Environment Variables
-
-| Variable              | Required | Description                                    |
-|-----------------------|----------|------------------------------------------------|
-| `SECRET_KEY`          | ✅ Yes   | Flask session encryption key (min 32 chars)   |
-| `FLASK_ENV`           | ✅ Yes   | `development` or `production`                 |
-| `DATABASE_URL`        | Optional | PostgreSQL URL. Defaults to SQLite locally    |
-| `MAIL_SERVER`         | Optional | SMTP server (default: smtp.gmail.com)         |
-| `MAIL_PORT`           | Optional | SMTP port (default: 587)                      |
-| `MAIL_USERNAME`       | Optional | Gmail address for sending OTPs                |
-| `MAIL_PASSWORD`       | Optional | Gmail App Password (NOT your real password)   |
-| `MAIL_DEFAULT_SENDER` | Optional | From name + email                             |
-| `GOOGLE_CLIENT_ID`    | Optional | Google OAuth client ID                        |
-| `GOOGLE_CLIENT_SECRET`| Optional | Google OAuth client secret                    |
-| `ADMIN_EMAIL`         | Optional | Admin panel login email                       |
-| `ADMIN_PASSWORD`      | Optional | Admin panel login password                    |
-
 ---
 
 ## 🗄️ Database Notes
@@ -148,53 +122,6 @@ Open → **http://localhost:5000**
 # Install pgloader
 # Then:
 pgloader sqlite:///roombandhu.db postgresql://user:pass@host/dbname
-```
-
----
-
-## 📱 Mobile Experience
-
-- Mobile-first CSS — optimised for low-end Android devices
-- Hamburger nav with smooth slide-in
-- Touch-friendly buttons (min 44px tap targets)
-- Lazy-loaded images
-- No layout shift on load
-- Responsive grid — single column on small screens
-
----
-
-## 🔒 Security Features
-
-- CSRF protection on all forms (Flask-WTF)
-- `X-CSRFToken` header on all AJAX POST requests
-- Password hashing with `pbkdf2:sha256`
-- Magic-byte image validation (not just extension)
-- Secure session cookies (`HttpOnly`, `SameSite=Lax`)
-- SQL injection safe via SQLAlchemy ORM
-- Environment-variable-based secrets
-- Admin panel fully isolated from user routes
-
----
-
-## 🌐 Google OAuth Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project → **APIs & Services → Credentials → OAuth 2.0 Client ID**
-3. Application type: **Web application**
-4. Authorised redirect URIs:
-   - Local: `http://localhost:5000/auth/google/callback`
-   - Production: `https://your-app.onrender.com/auth/google/callback`
-5. Copy **Client ID** and **Client Secret** to `.env`
-
----
-
-## 📧 Gmail App Password Setup
-
-1. Enable **2-Factor Authentication** on your Google account
-2. Go to **Google Account → Security → App Passwords**
-3. Create a new app password for "Mail"
-4. Use that 16-character password as `MAIL_PASSWORD` in `.env`
-
 ---
 
 *Built with ❤️ by Abhijeet Kumar Singh — RoomBandhu © 2026*
