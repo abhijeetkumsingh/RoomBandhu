@@ -7,13 +7,23 @@
   <meta name="theme-color" content="#0F1923">
   <title>{% block title %}RoomBandhu{% endblock %}</title>
 
-  <!-- Fonts: Poppins + Inter (same as old design) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/favicon.png') }}">
+
+  <!-- Firebase Config (public — safe to expose) -->
+  <script>
+    window.FIREBASE_CONFIG = {
+      apiKey:            "{{ config['FIREBASE_API_KEY'] }}",
+      authDomain:        "{{ config['FIREBASE_AUTH_DOMAIN'] }}",
+      projectId:         "{{ config['FIREBASE_PROJECT_ID'] }}",
+      storageBucket:     "{{ config['FIREBASE_STORAGE_BUCKET'] }}",
+      messagingSenderId: "{{ config['FIREBASE_MESSAGING_SENDER_ID'] }}",
+      appId:             "{{ config['FIREBASE_APP_ID'] }}"
+    };
+  </script>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -35,7 +45,7 @@
     <div class="nav-links" id="nav-links">
       <a href="{{ url_for('home') }}" class="nav-link">Explore</a>
 
-      {% if session.user_id %}
+      {% if session.uid %}
         <a href="{{ url_for('wishlist') }}" class="nav-link">
           ❤ Wishlist
           <span class="nav-badge" id="wish-badge">{{ wishlist_count or 0 }}</span>
@@ -45,14 +55,14 @@
 
         <div class="user-menu">
           <button class="user-avatar" onclick="toggleUserMenu()" aria-label="Account">
-            {{ session.user_name[0].upper() }}
+            {{ session.user_name[0].upper() if session.user_name else 'U' }}
           </button>
           <div class="user-dropdown" id="user-dropdown">
             <div class="user-name">{{ session.user_name }}</div>
             <a href="{{ url_for('dashboard') }}">📊 My Rooms</a>
             <a href="{{ url_for('wishlist') }}">❤️ Saved Rooms</a>
             <a href="{{ url_for('edit_profile') }}">✏️ Edit Profile</a>
-            <a href="{{ url_for('logout') }}" class="logout-link">→ Logout</a>
+            <a href="#" onclick="firebaseLogout(event)" class="logout-link">→ Logout</a>
           </div>
         </div>
 
@@ -61,7 +71,6 @@
         <a href="{{ url_for('register') }}" class="nav-btn-accent">Sign Up Free</a>
       {% endif %}
     </div>
-
   </div>
 </nav>
 
@@ -79,7 +88,6 @@
   {% endif %}
 {% endwith %}
 
-<!-- ══ PAGE CONTENT ══════════════════════════════════════════ -->
 {% block content %}{% endblock %}
 
 <!-- ══ FOOTER ════════════════════════════════════════════════ -->
@@ -100,6 +108,41 @@
     </div>
   </div>
 </footer>
+
+<!-- Firebase JS SDK (compat version — simpler API) -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+
+<script>
+  function ensureFirebaseAuth() {
+    if (!window.firebase) {
+      console.error('Firebase SDK is not loaded');
+      return null;
+    }
+
+    if (!window.FIREBASE_APP) {
+      window.FIREBASE_APP = firebase.apps.length
+        ? firebase.app()
+        : firebase.initializeApp(window.FIREBASE_CONFIG);
+    }
+
+    if (!window.fbAuth) {
+      window.fbAuth = window.FIREBASE_APP.auth();
+    }
+
+    return window.fbAuth;
+  }
+
+  window.ensureFirebaseAuth = ensureFirebaseAuth;
+  window.fbAuth = ensureFirebaseAuth();
+
+  async function firebaseLogout(e) {
+    e && e.preventDefault();
+    const auth = ensureFirebaseAuth();
+    try { if (auth) await auth.signOut(); } catch (err) {}
+    window.location.href = '/logout';
+  }
+</script>
 
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block extra_js %}{% endblock %}
