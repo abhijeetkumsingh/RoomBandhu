@@ -17,7 +17,6 @@ from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
 from authlib.integrations.flask_client import OAuth
-from firebase import verify_id_token
 
 # ─────────────────────────────────────────
 #  APP & CONFIG
@@ -40,14 +39,6 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_SECURE'] = (os.environ.get('FLASK_ENV') == 'production')
-
-# Firebase public app config for frontend auth
-app.config['FIREBASE_API_KEY'] = os.environ.get('FIREBASE_API_KEY', '')
-app.config['FIREBASE_AUTH_DOMAIN'] = os.environ.get('FIREBASE_AUTH_DOMAIN', '')
-app.config['FIREBASE_PROJECT_ID'] = os.environ.get('FIREBASE_PROJECT_ID', '')
-app.config['FIREBASE_STORAGE_BUCKET'] = os.environ.get('FIREBASE_STORAGE_BUCKET', '')
-app.config['FIREBASE_MESSAGING_SENDER_ID'] = os.environ.get('FIREBASE_MESSAGING_SENDER_ID', '')
-app.config['FIREBASE_APP_ID'] = os.environ.get('FIREBASE_APP_ID', '')
 
 # Database
 _db_url = os.environ.get('DATABASE_URL', '')
@@ -89,13 +80,18 @@ csrf  = CSRFProtect(app)
 mail  = Mail(app)
 oauth = OAuth(app)
 
-google = oauth.register(
-    name='google',
-    client_id     = os.environ.get('GOOGLE_CLIENT_ID', ''),
-    client_secret = os.environ.get('GOOGLE_CLIENT_SECRET', ''),
-    server_metadata_url = 'https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs = {'scope': 'openid email profile'},
-)
+google_client_id = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+google_client_secret = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
+
+google = None
+if google_client_id and google_client_secret:
+    google = oauth.register(
+        name='google',
+        client_id=google_client_id,
+        client_secret=google_client_secret,
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={'scope': 'openid email profile'},
+    )
 
 # ─────────────────────────────────────────
 #  MODELS
@@ -349,49 +345,22 @@ def logout():
     return redirect(url_for('home'))
 
 
-@app.route('/auth/verify-token', methods=['POST'])
-def verify_token_route():
-    data = request.get_json(silent=True) or {}
-    id_token = data.get('idToken')
-    if not id_token:
-        return jsonify({'success': False, 'error': 'Missing ID token'}), 400
-
-    decoded = verify_id_token(id_token)
-    if not decoded:
-        return jsonify({'success': False, 'error': 'Invalid or expired token'}), 401
-
-    user = User.query.filter_by(email=decoded.get('email', '').lower()).first()
-    if not user:
-        # Create a local user record for new Firebase-authenticated users
-        user = User(name=decoded.get('name', decoded.get('email', '').split('@')[0]),
-                    email=decoded.get('email', '').lower(),
-                    google_id=decoded.get('uid'),
-                    avatar_url=decoded.get('picture', ''),
-                    password=None)
-        db.session.add(user)
-        db.session.commit()
-    else:
-        if not user.google_id:
-            user.google_id = decoded.get('uid')
-            db.session.commit()
-
-    session.clear()
-    session.permanent = True
-    session['user_id'] = user.id
-    session['user_name'] = user.name
-    return jsonify({'success': True, 'redirect': url_for('dashboard')})
-
-
 # ── Google OAuth ──────────────────────────────────────────────────
 
 @app.route('/auth/google')
 def google_login():
+    if google is None:
+        flash('Google login is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env file.', 'error')
+        return redirect(url_for('login'))
     redirect_uri = url_for('google_callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
 
 @app.route('/auth/google/callback')
 def google_callback():
+    if google is None:
+        flash('Google login is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env file.', 'error')
+        return redirect(url_for('login'))
     try:
         token     = google.authorize_access_token()
         info      = token.get('userinfo') or {}
