@@ -45,11 +45,22 @@ from firebase_admin import credentials
 from firebase_admin import auth as firebase_auth
 
 # Firebase Admin initialization
+firebase_json = os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON')
 firebase_key_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH')
 
-if firebase_key_path and not firebase_admin._apps:
-    firebase_cred = credentials.Certificate(firebase_key_path)
-    firebase_admin.initialize_app(firebase_cred)
+if not firebase_admin._apps:
+    if firebase_json:
+        firebase_cred = credentials.Certificate(json.loads(firebase_json))
+        firebase_admin.initialize_app(firebase_cred)
+
+    elif firebase_key_path:
+        firebase_cred = credentials.Certificate(firebase_key_path)
+        firebase_admin.initialize_app(firebase_cred)
+
+    else:
+        app.logger.warning(
+            "Firebase credentials not configured. Firebase login will not work."
+        )
 # Database
 _db_url = os.environ.get('DATABASE_URL', '')
 if _db_url.startswith('postgres://'):
