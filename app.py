@@ -18,6 +18,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
 from authlib.integrations.flask_client import OAuth
 
+
 # ─────────────────────────────────────────
 #  APP & CONFIG
 # ─────────────────────────────────────────
@@ -39,7 +40,16 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_SECURE'] = (os.environ.get('FLASK_ENV') == 'production')
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import auth as firebase_auth
 
+# Firebase Admin initialization
+firebase_key_path = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH')
+
+if firebase_key_path and not firebase_admin._apps:
+    firebase_cred = credentials.Certificate(firebase_key_path)
+    firebase_admin.initialize_app(firebase_cred)
 # Database
 _db_url = os.environ.get('DATABASE_URL', '')
 if _db_url.startswith('postgres://'):
@@ -394,7 +404,53 @@ def google_callback():
         app.logger.error(f'Google OAuth error: {e}')
         flash('Google login failed. Please try again.', 'error')
         return redirect(url_for('login'))
+@app.route('/auth/firebase/session', methods=['POST'])
+def firebase_session_login():
+    try:
+        data = request.get_json(silent=True) or {}
+        id_token = data.get('idToken')
 
+        if not id_token:
+            return jsonify({'error': 'Missing Firebase token'}), 400
+
+        decoded = firebase_auth.verify_id_token(id_token)
+
+        email = (decoded.get('email') or '').strip().lower()
+
+        if not email or not decoded.get('email_verified'):
+            return jsonify({'error': 'Verified email required'}), 403
+
+        user = User.query.filter(
+            db.func.lower(User.email) == email
+        ).first()
+
+        if user:
+            if not user.is_active:
+                return jsonify({'error': 'Account suspended'}), 403
+        else:
+            user = User(
+                name=data.get('name') or decoded.get('name') or email.split('@')[0],
+                email=email,
+                phone=data.get('phone', ''),
+                password=None
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        session.clear()
+        session.permanent = True
+        session['user_id'] = user.id
+        session['user_name'] = user.name
+
+        return jsonify({
+            'success': True,
+            'redirect': url_for('dashboard')
+        })
+
+    except Exception:
+        db.session.rollback()
+        app.logger.exception('Firebase authentication failed')
+        return jsonify({'error': 'Authentication failed'}), 401
 
 # ── Forgot / Reset Password (OTP Flow) ───────────────────────────
 
@@ -811,7 +867,6 @@ def admin_toggle_user(user_id):
 # ─────────────────────────────────────────
 #  API
 # ─────────────────────────────────────────
-
 @app.route('/api/nearby')
 def nearby_rooms():
     lat = request.args.get('lat', type=float)
