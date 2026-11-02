@@ -144,7 +144,7 @@ class Room(db.Model):
     area         = db.Column(db.String(100), nullable=True)
     latitude     = db.Column(db.Float, nullable=True)
     longitude    = db.Column(db.Float, nullable=True)
-    phone        = db.Column(db.String(15),  nullable=False)
+    phone        = db.Column(db.String(15),  nullable=True)
     description  = db.Column(db.Text,        nullable=True)
     facilities   = db.Column(db.Text,        nullable=True)
     is_available = db.Column(db.Boolean, default=True)

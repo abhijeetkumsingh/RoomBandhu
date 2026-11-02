@@ -1,3 +1,4 @@
+
 # Python
 __pycache__/
 *.py[cod]
@@ -16,10 +17,17 @@ env/
 
 # Environment & secrets
 .env
-*.env
+.env.*
+!.env.example
+*.pem
+*.key
+firebase-keys/
+*service-account*.json
+*firebase-adminsdk*.json
 
 # Database (local only)
 *.db
+*.sqlite
 *.sqlite3
 
 # Uploads (don't commit user images)
@@ -37,6 +45,6 @@ Thumbs.db
 
 # Logs
 *.log
-firebase-keys/
-*.json
-*.db
+
+# Testing
+.pytest_cache/

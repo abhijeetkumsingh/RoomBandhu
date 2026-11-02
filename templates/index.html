@@ -43,17 +43,17 @@
     <select name="max_price" class="chip"
             onchange="document.getElementById('filter-form').submit()">
       <option value="0"    {% if not max_price  %}selected{% endif %}>Any Price</option>
-      <option value="2000" {% if max_price==2000 %}selected{% endif %}>Under ₹2,000</option>
-      <option value="3500" {% if max_price==3500 %}selected{% endif %}>Under ₹3,500</option>
-      <option value="5000" {% if max_price==5000 %}selected{% endif %}>Under ₹5,000</option>
+      <option value="2000" {% if max_price == 2000 %}selected{% endif %}>Under ₹2,000</option>
+      <option value="3500" {% if max_price == 3500 %}selected{% endif %}>Under ₹3,500</option>
+      <option value="5000" {% if max_price == 5000 %}selected{% endif %}>Under ₹5,000</option>
     </select>
 
     <select name="sort" class="chip"
             onchange="document.getElementById('filter-form').submit()">
-      <option value="default"    {% if sort=='default'    %}selected{% endif %}>Sort: Default</option>
-      <option value="price-asc"  {% if sort=='price-asc'  %}selected{% endif %}>Price: Low → High</option>
-      <option value="price-desc" {% if sort=='price-desc' %}selected{% endif %}>Price: High → Low</option>
-      <option value="rating"     {% if sort=='rating'     %}selected{% endif %}>Top Rated</option>
+      <option value="default"    {% if sort == 'default'    %}selected{% endif %}>Sort: Default</option>
+      <option value="price-asc"  {% if sort == 'price-asc'  %}selected{% endif %}>Price: Low → High</option>
+      <option value="price-desc" {% if sort == 'price-desc' %}selected{% endif %}>Price: High → Low</option>
+      <option value="rating"     {% if sort == 'rating'     %}selected{% endif %}>Top Rated</option>
     </select>
   </form>
 </div>
@@ -82,30 +82,38 @@
         <p>Try changing your search or filters</p>
       </div>
     {% endif %}
+{% for r in rooms %}
+    {% set img = r.images[0] if r.images else None %}
+    {% set demo_image = {1: 'images/room-02.png', 2: 'images/room-01.png', 3: 'images/room-03.png', 4: 'images/room-04.png', 5: 'images/room-01.png', 6: 'images/room-01.png'}.get(r.id) %}
 
-    {% for r in rooms %}
-      {% set img = r.images[0] if r.images else None %}
-      <div class="room-card">
+    <div class="room-card">
         <div class="card-img">
-          {% if img %}
-            <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
-                 alt="{{ r.title }}" loading="lazy">
-          {% else %}
-            <div class="img-placeholder">🏠</div>
-          {% endif %}
 
-          <div class="card-badges">
-            <span class="badge badge-type">{{ r.room_type }}</span>
-            {% if r.is_available %}
-              <span class="badge badge-avail">Available</span>
+            {% if demo_image %}
+                <img src="{{ url_for('static', filename=demo_image) }}"
+                     alt="{{ r.title }}" loading="lazy">
+
+            {% elif img %}
+                <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+                     alt="{{ r.title }}" loading="lazy">
+
             {% else %}
-              <span class="badge badge-unavail">Booked</span>
+                <div class="img-placeholder">🏠</div>
             {% endif %}
-          </div>
 
-          {% if r.images|length > 1 %}
-            <span class="img-count">📷 {{ r.images|length }}</span>
-          {% endif %}
+            <div class="card-badges">
+                <span class="badge badge-type">{{ r.room_type }}</span>
+
+                {% if r.is_available %}
+                    <span class="badge badge-avail">Available</span>
+                {% else %}
+                    <span class="badge badge-unavail">Booked</span>
+                {% endif %}
+            </div>
+
+            {% if r.images|length > 1 %}
+                <span class="img-count">📷 {{ r.images|length }}</span>
+            {% endif %}
 
           {% if session.user_id %}
             <button class="wish-btn {% if r.id in wish_ids %}active{% endif %}"
@@ -137,8 +145,10 @@
             </div>
             <div class="card-actions">
               <a href="{{ url_for('room_detail', room_id=r.id) }}" class="btn btn-outline">Details</a>
-              <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room listing "' + r.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
-                 target="_blank" rel="noopener" class="btn btn-green">💬</a>
+              {% if r.owner.email != 'demo-owner@roombandhu.invalid' and r.phone %}
+                <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room listing "' + r.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
+                   target="_blank" rel="noopener" class="btn btn-green">💬</a>
+              {% endif %}
             </div>
           </div>
         </div>

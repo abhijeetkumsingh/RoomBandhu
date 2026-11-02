@@ -11,7 +11,15 @@
   </a>
 
   <!-- ── Gallery ── -->
-  {% if room.images %}
+  {% set demo_image = {1: 'images/room-02.png', 2: 'images/room-01.png', 3: 'images/room-03.png', 4: 'images/room-04.png', 5: 'images/room-01.png', 6: 'images/room-01.png'}.get(room.id) %}
+  {% if demo_image %}
+    <div class="img-gallery">
+      <div class="gallery-main">
+        <img src="{{ url_for('static', filename=demo_image) }}"
+             alt="{{ room.title }}">
+      </div>
+    </div>
+  {% elif room.images %}
     <div class="img-gallery">
       <div class="gallery-main">
         <img src="{{ url_for('static', filename='uploads/' + room.images[0].filename) }}"
@@ -160,16 +168,22 @@
         </div>
 
         {% if user %}
-          <a href="tel:+91{{ room.phone }}"
-             class="btn btn-dark btn-lg btn-full"
-             style="margin-bottom:10px">
-            📞 Call: +91-{{ room.phone }}
-          </a>
-          <a href="https://wa.me/91{{ room.phone }}?text={{ ('Hi, I saw your room "' + room.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
-             target="_blank" rel="noopener"
-             class="btn btn-green btn-lg btn-full">
-            💬 WhatsApp Owner
-          </a>
+          {% if room.owner.email == 'demo-owner@roombandhu.invalid' %}
+            <p class="field-note">Demo phone for display only: DEMO-NO-CONTACT (contact disabled)</p>
+          {% elif room.phone %}
+            <a href="tel:+91{{ room.phone }}"
+               class="btn btn-dark btn-lg btn-full"
+               style="margin-bottom:10px">
+              📞 Call: +91-{{ room.phone }}
+            </a>
+            <a href="https://wa.me/91{{ room.phone }}?text={{ ('Hi, I saw your room "' + room.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
+               target="_blank" rel="noopener"
+               class="btn btn-green btn-lg btn-full">
+              💬 WhatsApp Owner
+            </a>
+          {% else %}
+            <p class="field-note">Contact details are unavailable for this listing.</p>
+          {% endif %}
           <button class="btn btn-full"
                   style="background:transparent;border:1.5px solid var(--border);margin-top:10px;padding:11px;border-radius:10px;font-size:13px"
                   onclick="toggleWish(this, {{ room.id }})">

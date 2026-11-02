@@ -54,8 +54,10 @@
               </div>
               <div class="card-actions">
                 <a href="{{ url_for('room_detail', room_id=r.id) }}" class="btn btn-outline">Details</a>
-                <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room "' + r.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
-                   target="_blank" rel="noopener" class="btn btn-green">💬</a>
+                {% if r.owner.email != 'demo-owner@roombandhu.invalid' and r.phone %}
+                  <a href="https://wa.me/91{{ r.phone }}?text={{ ('Hi, I saw your room "' + r.title + '" on RoomBandhu. Is it still available?')|urlencode }}"
+                     target="_blank" rel="noopener" class="btn btn-green">💬</a>
+                {% endif %}
               </div>
             </div>
           </div>
