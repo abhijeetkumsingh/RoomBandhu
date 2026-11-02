@@ -20,11 +20,15 @@
   {% else %}
     <div class="rooms-grid">
       {% for r in rooms %}
-        {% set img = r.images[0] if r.images else None %}
+        {% set images = available_room_images(r) %}
+        {% set demo_image = demo_room_image(r) %}
         <div class="room-card">
           <div class="card-img">
-            {% if img %}
-              <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+            {% if images %}
+              <img src="{{ url_for('uploaded_file', filename=images[0].filename) }}"
+                   alt="{{ r.title }}" loading="lazy">
+            {% elif demo_image %}
+              <img src="{{ url_for('static', filename=demo_image) }}"
                    alt="{{ r.title }}" loading="lazy">
             {% else %}
               <div class="img-placeholder">🏠</div>

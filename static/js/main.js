@@ -66,6 +66,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+/* ── Room image gallery ──────────────────────────────────── */
+document.addEventListener('click', event => {
+  const button = event.target.closest('.gallery-thumbnail');
+  if (!button) return;
+
+  const gallery = button.closest('[data-image-gallery]');
+  const mainImage = gallery && gallery.querySelector('.gallery-main img');
+  if (!mainImage) return;
+
+  mainImage.src = button.dataset.imageSrc;
+  mainImage.alt = button.dataset.imageAlt;
+  gallery.querySelectorAll('.gallery-thumbnail').forEach(thumbnail => {
+    thumbnail.setAttribute('aria-current', thumbnail === button ? 'true' : 'false');
+  });
+});
+
 /* ── Wishlist toggle ─────────────────────────────────────── */
 function toggleWish(btn, roomId) {
   post(`/wishlist/toggle/${roomId}`)
@@ -149,7 +165,7 @@ function renderNearby(rooms) {
         <div class="room-card" style="cursor:pointer" onclick="location.href='/room/${r.id}'">
           <div class="card-img">
             ${r.image
-              ? `<img src="/static/uploads/${r.image}" alt="${r.title}" loading="lazy">`
+              ? `<img src="${r.image}" alt="${r.title}" loading="lazy">`
               : `<div class="img-placeholder">🏠</div>`}
             <div class="card-badges"><span class="badge badge-type">${r.type}</span></div>
           </div>

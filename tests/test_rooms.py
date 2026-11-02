@@ -1,5 +1,7 @@
 from io import BytesIO
 
+from bs4 import BeautifulSoup
+
 from app import Room, RoomImage, Wishlist, db
 
 
@@ -83,6 +85,59 @@ def test_add_room_saves_uploaded_images(
         assert len(images) == 4
         assert images[0].is_primary is True
         assert all((temporary_uploads / image.filename).is_file() for image in images)
+        room_id = room.id
+
+    detail = client.get(f"/room/{room_id}")
+    detail_soup = BeautifulSoup(detail.data, "html.parser")
+    gallery_sources = [
+        image["src"] for image in detail_soup.select(".img-gallery img")
+    ]
+    expected_sources = [
+        f"/uploads/{image.filename}" for image in images
+    ]
+    assert detail.status_code == 200
+    assert gallery_sources == expected_sources
+    assert all(client.get(source).status_code == 200 for source in gallery_sources)
+
+    homepage = BeautifulSoup(client.get("/").data, "html.parser")
+    assert homepage.select_one(".room-card .card-img img")["src"] == expected_sources[0]
+
+    dashboard = BeautifulSoup(client.get("/dashboard").data, "html.parser")
+    assert dashboard.select_one(".my-room-thumb img")["src"] == expected_sources[0]
+
+
+def test_demo_listing_keeps_its_static_image(client, user_factory, room_factory):
+    demo_owner_id = user_factory(email="demo-owner@roombandhu.invalid")
+    room_id = room_factory(demo_owner_id, title="Original Demo Listing")
+
+    detail = BeautifulSoup(client.get(f"/room/{room_id}").data, "html.parser")
+    homepage = BeautifulSoup(client.get("/").data, "html.parser")
+
+    assert detail.select_one(".img-gallery img")["src"] == "/static/images/room-02.png"
+    assert homepage.select_one(".room-card .card-img img")["src"] == (
+        "/static/images/room-02.png"
+    )
+
+
+def test_missing_uploaded_file_is_not_rendered(
+    client, application, user_factory, room_factory
+):
+    user_id = user_factory()
+    room_id = room_factory(user_id, title="Missing Image Listing")
+    with application.app_context():
+        db.session.add(
+            RoomImage(
+                room_id=room_id,
+                filename="missing-room-photo.png",
+                is_primary=True,
+            )
+        )
+        db.session.commit()
+
+    detail = BeautifulSoup(client.get(f"/room/{room_id}").data, "html.parser")
+
+    assert detail.select(".img-gallery img") == []
+    assert "missing-room-photo.png" not in str(detail)
 
 
 def test_add_room_rejects_too_few_images(client, user_factory, login_as):

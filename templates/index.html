@@ -83,18 +83,18 @@
       </div>
     {% endif %}
 {% for r in rooms %}
-    {% set img = r.images[0] if r.images else None %}
-    {% set demo_image = {1: 'images/room-02.png', 2: 'images/room-01.png', 3: 'images/room-03.png', 4: 'images/room-04.png', 5: 'images/room-01.png', 6: 'images/room-01.png'}.get(r.id) %}
+    {% set images = available_room_images(r) %}
+    {% set demo_image = demo_room_image(r) %}
 
     <div class="room-card">
         <div class="card-img">
 
-            {% if demo_image %}
-                <img src="{{ url_for('static', filename=demo_image) }}"
+            {% if images %}
+                <img src="{{ url_for('uploaded_file', filename=images[0].filename) }}"
                      alt="{{ r.title }}" loading="lazy">
 
-            {% elif img %}
-                <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+            {% elif demo_image %}
+                <img src="{{ url_for('static', filename=demo_image) }}"
                      alt="{{ r.title }}" loading="lazy">
 
             {% else %}
@@ -111,8 +111,8 @@
                 {% endif %}
             </div>
 
-            {% if r.images|length > 1 %}
-                <span class="img-count">📷 {{ r.images|length }}</span>
+            {% if images|length > 1 %}
+                <span class="img-count">📷 {{ images|length }}</span>
             {% endif %}
 
           {% if session.user_id %}

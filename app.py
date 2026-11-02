@@ -11,7 +11,7 @@ from functools import wraps
 from math import radians, sin, cos, sqrt, atan2
 
 from flask import (Flask, render_template, request, redirect,
-                   url_for, session, jsonify, flash)
+                   url_for, session, jsonify, flash, send_from_directory)
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -80,6 +80,15 @@ ALLOWED_EXT   = {'png', 'jpg', 'jpeg', 'webp'}
 app.config['UPLOAD_FOLDER']      = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+DEMO_OWNER_EMAIL = 'demo-owner@roombandhu.invalid'
+DEMO_ROOM_IMAGES = {
+    1: 'images/room-02.png',
+    2: 'images/room-01.png',
+    3: 'images/room-03.png',
+    4: 'images/room-04.png',
+    5: 'images/room-01.png',
+    6: 'images/room-01.png',
+}
 
 # Mail
 app.config.update(
@@ -151,7 +160,8 @@ class Room(db.Model):
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
     user_id      = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     images       = db.relationship('RoomImage', backref='room', lazy='select',
-                                   cascade='all, delete-orphan')
+                                   cascade='all, delete-orphan',
+                                   order_by='RoomImage.id')
     reviews      = db.relationship('Review',    backref='room', lazy='select',
                                    cascade='all, delete-orphan')
     wishlisted   = db.relationship('Wishlist',  backref='room', lazy='select',
@@ -192,6 +202,31 @@ class Wishlist(db.Model):
     id      = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+
+
+def available_room_images(room):
+    upload_folder = app.config['UPLOAD_FOLDER']
+    images = [
+        image for image in room.images
+        if os.path.basename(image.filename) == image.filename
+        and os.path.isfile(os.path.join(upload_folder, image.filename))
+    ]
+    return sorted(images, key=lambda image: (not image.is_primary, image.id))
+
+
+def demo_room_image(room):
+    if room.owner.email != DEMO_OWNER_EMAIL:
+        return None
+    return DEMO_ROOM_IMAGES.get(room.id)
+
+
+app.add_template_global(available_room_images)
+app.add_template_global(demo_room_image)
+
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 class OTPToken(db.Model):
@@ -687,7 +722,8 @@ def add_room():
         for i, img in enumerate(valid_images):
             ext  = img.filename.rsplit('.', 1)[1].lower()
             name = f"{uuid.uuid4().hex}.{ext}"
-            img.save(os.path.join(UPLOAD_FOLDER, name))
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            img.save(os.path.join(app.config['UPLOAD_FOLDER'], name))
             db.session.add(RoomImage(room_id=room.id, filename=name, is_primary=(i == 0)))
 
         db.session.commit()
@@ -705,7 +741,7 @@ def delete_room(room_id):
         flash('Not authorised', 'error')
         return redirect(url_for('dashboard'))
     for img in room.images:
-        p = os.path.join(UPLOAD_FOLDER, img.filename)
+        p = os.path.join(app.config['UPLOAD_FOLDER'], img.filename)
         if os.path.exists(p):
             os.remove(p)
     db.session.delete(room)
@@ -856,7 +892,7 @@ def admin_rooms():
 def admin_delete_room(room_id):
     room = db.get_or_404(Room, room_id)
     for img in room.images:
-        p = os.path.join(UPLOAD_FOLDER, img.filename)
+        p = os.path.join(app.config['UPLOAD_FOLDER'], img.filename)
         if os.path.exists(p):
             os.remove(p)
     db.session.delete(room)
@@ -899,12 +935,23 @@ def nearby_rooms():
         return R * 2 * atan2(sqrt(a), sqrt(1 - a))
 
     nearby = sorted([(r, dist(r)) for r in rooms], key=lambda x: x[1])[:10]
-    return jsonify([{
-        'id': r.id, 'title': r.title, 'rent': r.rent,
-        'location': r.location, 'type': r.room_type,
-        'distance_km': round(d, 2), 'rating': r.avg_rating(),
-        'image': r.images[0].filename if r.images else None
-    } for r, d in nearby])
+    results = []
+    for room, distance in nearby:
+        images = available_room_images(room)
+        demo_image = demo_room_image(room)
+        image = (
+            url_for('uploaded_file', filename=images[0].filename)
+            if images else
+            url_for('static', filename=demo_image)
+            if demo_image else None
+        )
+        results.append({
+            'id': room.id, 'title': room.title, 'rent': room.rent,
+            'location': room.location, 'type': room.room_type,
+            'distance_km': round(distance, 2), 'rating': room.avg_rating(),
+            'image': image,
+        })
+    return jsonify(results)
 
 
 # ─────────────────────────────────────────

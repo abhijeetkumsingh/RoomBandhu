@@ -11,32 +11,37 @@
   </a>
 
   <!-- ── Gallery ── -->
-  {% set demo_image = {1: 'images/room-02.png', 2: 'images/room-01.png', 3: 'images/room-03.png', 4: 'images/room-04.png', 5: 'images/room-01.png', 6: 'images/room-01.png'}.get(room.id) %}
-  {% if demo_image %}
-    <div class="img-gallery">
+  {% set images = available_room_images(room) %}
+  {% set demo_image = demo_room_image(room) %}
+  {% if images %}
+    <div class="img-gallery{% if images|length == 1 %} gallery-single{% endif %}"
+         data-image-gallery>
+      <div class="gallery-main">
+        <img src="{{ url_for('uploaded_file', filename=images[0].filename) }}"
+             alt="{{ room.title }}">
+      </div>
+      {% if images|length > 1 %}
+        <div class="gallery-thumbnails" aria-label="Room photos">
+          {% for img in images[1:] %}
+            <button type="button" class="gallery-thumbnail"
+                    data-image-src="{{ url_for('uploaded_file', filename=img.filename) }}"
+                    data-image-alt="{{ room.title }} photo {{ loop.index + 1 }}"
+                    aria-label="Show photo {{ loop.index + 1 }}"
+                    aria-current="false">
+              <img src="{{ url_for('uploaded_file', filename=img.filename) }}"
+                   alt="" loading="lazy">
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% elif demo_image %}
+    <div class="img-gallery gallery-single">
       <div class="gallery-main">
         <img src="{{ url_for('static', filename=demo_image) }}"
              alt="{{ room.title }}">
       </div>
     </div>
-  {% elif room.images %}
-    <div class="img-gallery">
-      <div class="gallery-main">
-        <img src="{{ url_for('static', filename='uploads/' + room.images[0].filename) }}"
-             alt="{{ room.title }}">
-      </div>
-      {% for img in room.images[1:4] %}
-        <div class="gallery-sub">
-          <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
-               alt="{{ room.title }} {{ loop.index + 1 }}" loading="lazy">
-        </div>
-      {% endfor %}
-    </div>
-    {% if room.images|length > 4 %}
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;margin-top:-12px">
-        +{{ room.images|length - 4 }} more photos
-      </p>
-    {% endif %}
   {% else %}
     <div style="height:240px;background:linear-gradient(135deg,#f0ede8,#e8e4dd);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:64px;margin-bottom:24px">🏠</div>
   {% endif %}
