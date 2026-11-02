@@ -1,127 +1,196 @@
 # 🏠 RoomBandhu
+### Find Your Perfect Room Near College
 
-Find affordable single rooms, shared rooms, and PGs near your college.
+**RoomBandhu** is a student-focused accommodation platform designed to make finding affordable rooms near colleges easier and more convenient.
+
+The platform helps students explore available room listings, compare rental prices, view property details, and save their favourite accommodation options.
+
+<p align="center">
+  <strong>Find a Room. Find Your Comfort. Find Your Bandhu.</strong>
+</p>
 
 ---
 
-## 📦 Project Structure
+## 🌐 Live Project
 
-```
+**Live Website:** https://roombandhu.onrender.com
+
+**GitHub Repository:** https://github.com/abhijeetkumsingh/RoomBandhu
+
+---
+
+## ✨ Key Features
+
+- 🔐 **User Authentication** – Secure registration, login and logout.
+- 🌐 **Google Authentication** – Google OAuth integration.
+- 🏘️ **Room Listings** – Explore available rooms and accommodation.
+- 🔍 **Search & Filters** – Search and filter rooms according to preferences.
+- 💰 **Price Sorting** – Sort room listings by rental price.
+- 🖼️ **Room Details** – View room information and photographs.
+- ❤️ **Wishlist** – Save favourite room listings.
+- ⭐ **Reviews** – Share feedback on room listings.
+- 📊 **User Dashboard** – Manage user activities and profile.
+- 🛠️ **Admin Panel** – Administrative management functionality.
+- 📍 **Nearby Search** – Location-based room discovery support.
+- 📱 **Responsive Design** – User-friendly interface for desktop and mobile.
+
+---
+
+## 🛠️ Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Frontend | HTML5, CSS3, JavaScript |
+| Backend | Python, Flask |
+| Database | PostgreSQL, SQLite |
+| ORM | Flask-SQLAlchemy, SQLAlchemy |
+| Authentication | Firebase Authentication, Google OAuth |
+| Security | Flask-WTF, Werkzeug |
+| Email Service | Flask-Mail |
+| Testing | Pytest |
+| Deployment | Render |
+| Version Control | Git, GitHub |
+
+---
+
+## 📂 Project Structure
+
+```text
 RoomBandhu/
-├── app.py                   ← Main Flask application
-├── requirements.txt         ← Python dependencies
-├── Procfile                 ← Gunicorn startup for Render
-├── render.yaml              ← One-click Render deployment config
-├── .env.example             ← Environment variable template
-├── .gitignore
+│
+├── app.py                          # Main Flask application
+├── requirements.txt                # Python dependencies
+├── requirements-dev.txt            # Development and testing dependencies
+├── pytest.ini                       # Pytest configuration
+├── Procfile                         # Gunicorn startup configuration
+├── render.yaml                      # Render deployment configuration
+├── .gitignore                       # Git ignored files configuration
+│
+├── scripts/
+│   └── seed_demo_rooms.py           # Demo room data seeder
+│
 ├── static/
-│   ├── css/style.css        ← All styles (mobile-first)
-│   ├── js/main.js           ← All JavaScript (CSRF-safe)
-│   └── uploads/             ← User-uploaded room images
-└── templates/
-    ├── base.html            ← Base layout with navbar & footer
-    ├── index.html           ← Home / room listing page
-    ├── auth.html            ← Login & Register (+ Google)
-    ├── forgot_password.html ← Step 1: Enter email
-    ├── verify_otp.html      ← Step 2: Enter OTP
-    ├── reset_password.html  ← Step 3: New password
-    ├── dashboard.html       ← User dashboard
-    ├── edit_profile.html    ← Edit profile & change password
-    ├── add_room.html        ← List a new room
-    ├── room_detail.html     ← Room detail + reviews
-    ├── wishlist.html        ← Saved rooms
-    ├── errors/
-    │   ├── 404.html
-    │   └── 500.html
-    └── admin/
-        ├── base.html        ← Admin sidebar layout
-        ├── login.html       ← Admin login
-        ├── dashboard.html   ← Stats overview
-        ├── users.html       ← User management
-        └── rooms.html       ← Listing management
+│   ├── css/
+│   │   └── style.css                # Application styles
+│   │
+│   ├── js/
+│   │   └── main.js                  # Frontend JavaScript
+│   │
+│   ├── images/
+│   │   ├── room-01.png
+│   │   ├── room-02.png
+│   │   ├── room-03.png
+│   │   └── room-04.png
+│   │
+│   └── uploads/                     # User-uploaded room images
+│
+├── templates/
+│   ├── base.html                    # Base layout
+│   ├── index.html                   # Homepage and room listings
+│   ├── auth.html                    # Login and registration
+│   ├── room_detail.html             # Room details and reviews
+│   ├── wishlist.html                # Saved rooms
+│   ├── dashboard.html               # User dashboard
+│   ├── edit_profile.html            # Profile management
+│   ├── add_room.html                # Add new room listing
+│   ├── forgot_password.html         # Password recovery
+│   ├── verify_otp.html              # OTP verification
+│   ├── reset_password.html          # Password reset
+│   │
+│   ├── errors/
+│   │   ├── 404.html                 # Page not found
+│   │   └── 500.html                 # Server error
+│   │
+│   └── admin/
+│       ├── base.html                # Admin layout
+│       ├── login.html               # Admin login
+│       ├── dashboard.html           # Admin dashboard
+│       ├── users.html               # User management
+│       └── rooms.html               # Room management
+│
+└── tests/
+    ├── conftest.py                  # Test configuration and fixtures
+    ├── test_auth.py                 # Authentication tests
+    ├── test_rooms.py                # Room functionality tests
+    ├── test_public_routes.py        # Public route tests
+    └── test_admin_and_external_auth.py
 ```
 
 ---
 
-## 🚀 How to Run Locally
+## 🎯 Project Objective
 
-### 1. Prerequisites
-- Python 3.10+
-- pip
+Finding affordable accommodation near educational institutions can be challenging for students, especially those moving away from home for higher education.
 
-### 2. Setup
-
-```bash
-
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate       # Linux / macOS
-venv\Scripts\activate          # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env — at minimum set a SECRET_KEY
-
-# Run the app
-python app.py
-```
-
-Open → **http://localhost:5000**
-
+RoomBandhu aims to simplify this process by providing a centralized platform where students can discover suitable rooms, explore rental information, and manage their accommodation preferences.
 
 ---
 
-## ☁️ Deploy on Render (Recommended)
+## 🧪 Quality & Testing
 
-### Option A — render.yaml (Easiest)
+RoomBandhu includes an automated testing suite built with Pytest.
 
-1. Push this project to a **GitHub repository**.
-2. Go to [render.com](https://render.com) → **New → Blueprint**.
-3. Connect your repo — Render reads `render.yaml` automatically.
-4. It creates a **web service** + **PostgreSQL database** together.
-5. Set the secret environment variables in the Render dashboard:
-   - `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_DEFAULT_SENDER`
-   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-   - `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-6. Deploy. Done.
+The tests cover:
+- Authentication functionality
+- Public application routes
+- Room listing and detail functionality
+- Wishlist and user-related features
+- Administrative functionality
+- External authentication flows
 
-### Option B — Manual
-
-1. **New Web Service** → connect GitHub repo
-2. Build command: `pip install -r requirements.txt`
-3. Start command: `gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120`
-4. Add a **PostgreSQL** database service, copy its **Internal Database URL** as `DATABASE_URL`
-5. Add all env vars listed in `.env.example`
+**Latest verified test result:** 39 tests passed.
 
 ---
 
-## 🔐 Default Admin Login
+## 🚀 Deployment
 
-| Field    | Value                  |
-|----------|------------------------|
-| URL      | `/admin/login`         |
-| Email    | `admin@roombandhu.com` |
-| Password | `Admin@Secure123`      |
+RoomBandhu is deployed on **Render**.
+
+- Application hosting: Render Web Service
+- Production database: PostgreSQL
+- Application server: Gunicorn
+- Source code management: GitHub
+
+**Live Website:** https://roombandhu.onrender.com
 
 ---
 
-## 🗄️ Database Notes
+## 🔮 Future Scope
 
-- **Local**: SQLite (`roombandhu.db`) created automatically on first run — no setup needed.
-- **Production**: PostgreSQL — `DATABASE_URL` is set by Render automatically.
-- Tables are created automatically via `db.create_all()` on startup.
-- **Existing data is safe** — `db.create_all()` only creates missing tables, never drops data.
-- If you need to add a new column after deployment, use Flask-Migrate or alter the table manually.
+- Advanced location-based room recommendations.
+- Interactive map-based room discovery.
+- Online room booking and payment integration.
+- Real-time communication between students and property owners.
+- Verified property listings.
+- Enhanced room recommendation system.
 
-### Migrate existing SQLite data to PostgreSQL
-
-```bash
-# Install pgloader
-# Then:
-pgloader sqlite:///roombandhu.db postgresql://user:pass@host/dbname
 ---
 
-*Built with ❤️ by Abhijeet Kumar Singh — RoomBandhu © 2026*
+## 👨‍💻 Developer
+
+**Abhijeet Kumar Singh**
+
+B.Tech – Computer Science Engineering (AI)
+
+Government Engineering College, Lakhisarai, Bihar
+
+**GitHub:** https://github.com/abhijeetkumsingh
+
+---
+
+## 🔒 Copyright & Usage Notice
+
+© 2026 Abhijeet Kumar Singh. All Rights Reserved.
+
+RoomBandhu is a proprietary project developed and maintained by its author.
+
+This repository is published for portfolio, demonstration, and project showcase purposes only.
+
+No permission is granted to copy, reproduce, modify, distribute, reuse, or commercially exploit the project's source code, UI/UX design, branding, graphics, or other assets without prior written permission from the author.
+
+**This project is not open source. No open-source license is granted. All rights are reserved.**
+
+---
+
+<p align="center">
+  <strong>RoomBandhu – Making Student Accommodation Easier! 🏠</strong>
