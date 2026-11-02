@@ -119,6 +119,46 @@ def test_demo_listing_keeps_its_static_image(client, user_factory, room_factory)
     )
 
 
+def test_seeded_demo_images_survive_owner_and_room_id_drift(
+    client, user_factory, room_factory
+):
+    other_owner_id = user_factory(email="other-owner@example.test")
+    for index in range(7):
+        room_factory(other_owner_id, title=f"Unrelated Room {index}")
+
+    seeded_demo_owner_id = user_factory(email="legacy-demo@example.test")
+    expected_images = {
+        "Affordable Single Room": "room-01.png",
+        "Student Shared Room": "room-03.png",
+        "Girls PG": "room-04.png",
+        "Premium Student Room": "room-01.png",
+        "Room Near College": "room-01.png",
+    }
+
+    for title, filename in expected_images.items():
+        room_id = room_factory(
+            seeded_demo_owner_id,
+            title=title,
+            phone="DEMO-NO-CONTACT",
+        )
+        assert room_id > 6
+
+        detail = BeautifulSoup(
+            client.get(f"/room/{room_id}").data, "html.parser"
+        )
+        image_url = f"/static/images/{filename}"
+        assert detail.select_one(".img-gallery img")["src"] == image_url
+        assert client.get(image_url).status_code == 200
+
+        homepage = BeautifulSoup(client.get("/").data, "html.parser")
+        card = next(
+            card
+            for card in homepage.select(".room-card")
+            if card.select_one(".card-title").get_text(strip=True) == title
+        )
+        assert card.select_one(".card-img img")["src"] == image_url
+
+
 def test_missing_uploaded_file_is_not_rendered(
     client, application, user_factory, room_factory
 ):

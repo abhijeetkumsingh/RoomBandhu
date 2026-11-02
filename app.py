@@ -89,6 +89,14 @@ DEMO_ROOM_IMAGES = {
     5: 'images/room-01.png',
     6: 'images/room-01.png',
 }
+DEMO_PHONE_PLACEHOLDER = 'DEMO-NO-CONTACT'
+DEMO_ROOM_IMAGES_BY_TITLE = {
+    'Affordable Single Room': 'images/room-01.png',
+    'Student Shared Room': 'images/room-03.png',
+    'Girls PG': 'images/room-04.png',
+    'Premium Student Room': 'images/room-01.png',
+    'Room Near College': 'images/room-01.png',
+}
 
 # Mail
 app.config.update(
@@ -215,9 +223,17 @@ def available_room_images(room):
 
 
 def demo_room_image(room):
-    if room.owner.email != DEMO_OWNER_EMAIL:
+    owner_email = (room.owner.email or '').strip().casefold()
+    has_seed_marker = (
+        room.phone == DEMO_PHONE_PLACEHOLDER
+        and room.title in DEMO_ROOM_IMAGES_BY_TITLE
+    )
+    if owner_email != DEMO_OWNER_EMAIL.casefold() and not has_seed_marker:
         return None
-    return DEMO_ROOM_IMAGES.get(room.id)
+    return DEMO_ROOM_IMAGES_BY_TITLE.get(
+        room.title,
+        DEMO_ROOM_IMAGES.get(room.id),
+    )
 
 
 app.add_template_global(available_room_images)
