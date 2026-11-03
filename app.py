@@ -97,6 +97,18 @@ DEMO_ROOM_IMAGES_BY_TITLE = {
     'Premium Student Room': 'images/room-01.png',
     'Room Near College': 'images/room-01.png',
 }
+LEGACY_DEMO_ROOM_IMAGE_SIGNATURES = {
+    ('cozy single room near nit patna', 6500, 'single',
+     'near nit patna, ashok rajpath, patna'): 'images/room-01.png',
+    ('near patna junction', 7000, 'shared',
+     'patna railway junction'): 'images/room-01.png',
+    ('flat near college', 5000, 'shared', ''): 'images/room-01.png',
+    ('room near gec', 15000, 'single', ''): 'images/room-04.png',
+    ('luxurious room', 35000, 'single',
+     'shivsona halsi lakhisarai'): 'images/room-03.png',
+    ('girls pg', 2000, 'single', ''): 'images/room-01.png',
+    ('student pg', 3501, 'single', ''): 'images/room-02.png',
+}
 
 # Mail
 app.config.update(
@@ -228,12 +240,23 @@ def demo_room_image(room):
         room.phone == DEMO_PHONE_PLACEHOLDER
         and room.title in DEMO_ROOM_IMAGES_BY_TITLE
     )
-    if owner_email != DEMO_OWNER_EMAIL.casefold() and not has_seed_marker:
+    if owner_email == DEMO_OWNER_EMAIL.casefold() or has_seed_marker:
+        image = DEMO_ROOM_IMAGES_BY_TITLE.get(
+            room.title,
+            DEMO_ROOM_IMAGES.get(room.id),
+        )
+    else:
+        signature = (
+            ' '.join((room.title or '').split()).casefold(),
+            room.rent,
+            ' '.join((room.room_type or '').split()).casefold(),
+            ' '.join((room.location or '').split()).casefold(),
+        )
+        image = LEGACY_DEMO_ROOM_IMAGE_SIGNATURES.get(signature)
+
+    if not image or not os.path.isfile(os.path.join(app.static_folder, image)):
         return None
-    return DEMO_ROOM_IMAGES_BY_TITLE.get(
-        room.title,
-        DEMO_ROOM_IMAGES.get(room.id),
-    )
+    return image
 
 
 app.add_template_global(available_room_images)

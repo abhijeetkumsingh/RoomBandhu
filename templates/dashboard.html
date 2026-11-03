@@ -51,10 +51,14 @@
 
   {% for r in my_rooms %}
     {% set images = available_room_images(r) %}
+    {% set demo_image = demo_room_image(r) %}
     <div class="my-room-row">
       <div class="my-room-thumb">
         {% if images %}
           <img src="{{ url_for('uploaded_file', filename=images[0].filename) }}"
+               alt="{{ r.title }}">
+        {% elif demo_image %}
+          <img src="{{ url_for('static', filename=demo_image) }}"
                alt="{{ r.title }}">
         {% else %}🏠{% endif %}
       </div>

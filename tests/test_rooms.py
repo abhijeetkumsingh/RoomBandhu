@@ -159,6 +159,141 @@ def test_seeded_demo_images_survive_owner_and_room_id_drift(
         assert card.select_one(".card-img img")["src"] == image_url
 
 
+def test_legacy_production_demo_images_use_listing_signatures(
+    client, user_factory, room_factory, login_as
+):
+    owner_id = user_factory(email="legacy-listings@example.test")
+    legacy_rooms = (
+        ("Cozy Single Room Near NIT Patna", 6500, "Single",
+         "Near NIT Patna, Ashok Rajpath, Patna", "room-01.png"),
+        ("Near Patna Junction", 7000, "Shared",
+         "Patna Railway Junction", "room-01.png"),
+        ("Flat Near College", 5000, "Shared", "", "room-01.png"),
+        ("Room Near GEC", 15000, "Single", "", "room-04.png"),
+        ("Luxurious room", 35000, "Single",
+         "Shivsona halsi Lakhisarai", "room-03.png"),
+        ("Girls PG", 2000, "Single", "", "room-01.png"),
+        ("Student PG", 3501, "Single", "", "room-02.png"),
+    )
+    saved_room_id = None
+
+    for title, rent, room_type, location, filename in legacy_rooms:
+        room_id = room_factory(
+            owner_id,
+            title=title,
+            rent=rent,
+            room_type=room_type,
+            location=location,
+        )
+        if title == "Student PG":
+            saved_room_id = room_id
+        image_url = f"/static/images/{filename}"
+
+        detail = BeautifulSoup(
+            client.get(f"/room/{room_id}").data, "html.parser"
+        )
+        assert detail.select_one(".img-gallery img")["src"] == image_url
+        assert client.get(image_url).status_code == 200
+
+        homepage = BeautifulSoup(client.get("/").data, "html.parser")
+        card = next(
+            card
+            for card in homepage.select(".room-card")
+            if card.select_one(".card-title").get_text(strip=True) == title
+        )
+        assert card.select_one(".card-img img")["src"] == image_url
+
+    with client.application.app_context():
+        db.session.add(Wishlist(user_id=owner_id, room_id=saved_room_id))
+        db.session.commit()
+    login_as(owner_id)
+
+    dashboard = BeautifulSoup(client.get("/dashboard").data, "html.parser")
+    student_listing = next(
+        row
+        for row in dashboard.select(".my-room-row")
+        if row.select_one(".my-room-title").get_text(strip=True) == "Student PG"
+    )
+    wishlist = BeautifulSoup(client.get("/wishlist").data, "html.parser")
+
+    assert student_listing.select_one(".my-room-thumb img")["src"] == (
+        "/static/images/room-02.png"
+    )
+    assert wishlist.select_one(".room-card .card-img img")["src"] == (
+        "/static/images/room-02.png"
+    )
+
+
+def test_demo_image_uses_uploads_first_on_all_room_surfaces(
+    client,
+    application,
+    user_factory,
+    room_factory,
+    login_as,
+    temporary_uploads,
+    test_image_bytes,
+):
+    owner_id = user_factory(email="legacy-listing@example.test")
+    room_id = room_factory(
+        owner_id,
+        title="Student PG",
+        rent=3501,
+        room_type="Single",
+        location="",
+        latitude=25.6,
+        longitude=85.1,
+    )
+    filename = "legacy-demo-upload.png"
+    (temporary_uploads / filename).write_bytes(test_image_bytes)
+    with application.app_context():
+        db.session.add(
+            RoomImage(room_id=room_id, filename=filename, is_primary=True)
+        )
+        db.session.add(Wishlist(user_id=owner_id, room_id=room_id))
+        db.session.commit()
+    login_as(owner_id)
+
+    upload_url = f"/uploads/{filename}"
+    detail = BeautifulSoup(
+        client.get(f"/room/{room_id}").data, "html.parser"
+    )
+    homepage = BeautifulSoup(client.get("/").data, "html.parser")
+    dashboard = BeautifulSoup(client.get("/dashboard").data, "html.parser")
+    wishlist = BeautifulSoup(client.get("/wishlist").data, "html.parser")
+    nearby = client.get("/api/nearby?lat=25.6&lng=85.1").get_json()
+
+    assert detail.select_one(".img-gallery img")["src"] == upload_url
+    assert homepage.select_one(".room-card .card-img img")["src"] == upload_url
+    assert dashboard.select_one(".my-room-thumb img")["src"] == upload_url
+    assert wishlist.select_one(".room-card .card-img img")["src"] == upload_url
+    assert nearby[0]["image"] == upload_url
+    assert client.get(upload_url).status_code == 200
+
+
+def test_missing_demo_static_asset_uses_fallback(
+    client, application, user_factory, room_factory, monkeypatch, tmp_path
+):
+    owner_id = user_factory(email="legacy-listing@example.test")
+    room_id = room_factory(
+        owner_id,
+        title="Student PG",
+        rent=3501,
+        room_type="Single",
+        location="",
+    )
+    monkeypatch.setattr(application, "static_folder", str(tmp_path))
+
+    detail = BeautifulSoup(
+        client.get(f"/room/{room_id}").data, "html.parser"
+    )
+    homepage = BeautifulSoup(client.get("/").data, "html.parser")
+
+    assert detail.select(".img-gallery img") == []
+    assert "🏠" in detail.get_text()
+    assert homepage.select_one(".room-card .card-img img") is None
+    assert homepage.select_one(".room-card .img-placeholder") is not None
+
+
 def test_missing_uploaded_file_is_not_rendered(
     client, application, user_factory, room_factory
 ):
